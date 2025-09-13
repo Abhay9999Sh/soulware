@@ -24,12 +24,14 @@ export async function POST(req) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("userId");
+  
   try {
     const client = await clientPromise;
     const db = client.db();
     const volunteer = await db.collection("volunteers").findOne({ userId });
     return Response.json(volunteer || {});
   } catch (error) {
+    console.error("Volunteer Profile GET Error:", error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }

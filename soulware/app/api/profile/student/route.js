@@ -45,12 +45,14 @@ export async function POST(req) {
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("userId");
+  
   try {
     const client = await clientPromise;
     const db = client.db();
     const student = await db.collection("students").findOne({ userId });
     return Response.json(student || {});
   } catch (error) {
+    console.error("Student Profile GET Error:", error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
