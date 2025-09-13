@@ -1,31 +1,23 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
 export default function StudentProfileForm() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const router = useRouter();
+
   const [form, setForm] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
+    name: user?.fullName || "",
+    email: user?.primaryEmailAddress?.emailAddress || "",
     enrollmentNo: "",
     year: "",
     branch: "",
-    languagePref: "en",
-    isAnonymous: false,
+    languagePref: "English",
+    isAnonymous: true,
   });
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      console.log("Clerk user loaded:", user);
-      setForm(prev => ({
-        ...prev,
-        name: user.fullName || "",
-        email: user.emailAddresses?.[0]?.emailAddress || "",
-      }));
-    }
-  }, [isLoaded, user]);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -37,56 +29,132 @@ export default function StudentProfileForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted with data:", form);
-    console.log("User from Clerk:", user);
-    
+    setLoading(true);
+
     try {
-      const formData = {
-        ...form,
-        userId: user?.id || "dummy_user_id"
-      };
-      
-      console.log("Sending data to API:", formData);
-      
-      const res = await fetch("/api/profile/student", {
+      const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...form,
+          role: "student",
+        }),
       });
-      
-      console.log("API Response status:", res.status);
+
       const data = await res.json();
-      console.log("API Response data:", data);
-      
+
       if (data.success) {
-        alert("Profile saved successfully!");
-        router.push("/"); // Redirect to home after successful save
+        router.push("/dashboard/student");
       } else {
         alert("Error: " + data.error);
       }
     } catch (err) {
-      console.error("Network error:", err);
-      alert("Network error: " + err.message);
+      console.error("Error submitting form:", err);
+      alert("Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form className="max-w-md mx-auto py-10 space-y-4" onSubmit={handleSubmit}>
-      <h2 className="text-xl font-bold mb-4">Student Profile</h2>
-      <input name="name" value={form.name} onChange={handleChange} placeholder="Name" className="w-full border rounded px-3 py-2" required />
-      <input name="email" value={form.email} onChange={handleChange} placeholder="Email" className="w-full border rounded px-3 py-2" required />
-      <input name="enrollmentNo" value={form.enrollmentNo} onChange={handleChange} placeholder="Enrollment No" className="w-full border rounded px-3 py-2" required />
-      <input name="year" value={form.year} onChange={handleChange} placeholder="Year" className="w-full border rounded px-3 py-2" required />
-      <input name="branch" value={form.branch} onChange={handleChange} placeholder="Branch" className="w-full border rounded px-3 py-2" required />
-      <select name="languagePref" value={form.languagePref} onChange={handleChange} className="w-full border rounded px-3 py-2">
-        <option value="en">English</option>
-        <option value="hi">Hindi</option>
-      </select>
-      <label className="flex items-center gap-2">
-        <input type="checkbox" name="isAnonymous" checked={form.isAnonymous} onChange={handleChange} />
-        Use Anonymous Mode
-      </label>
-      <button type="submit" className="w-full bg-primary text-white py-2 rounded font-semibold">Save Profile</button>
-    </form>
+    <div className="max-w-md mx-auto py-10">
+      <h2 className="text-2xl font-bold mb-6 text-center">Student Onboarding</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        
+        <div>
+          <label className="block text-sm font-medium">Name</label>
+          <input
+            type="text"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Email</label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            disabled
+            className="w-full border rounded px-3 py-2 bg-gray-100"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Enrollment No</label>
+          <input
+            type="text"
+            name="enrollmentNo"
+            value={form.enrollmentNo}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Year</label>
+          <input
+            type="number"
+            name="year"
+            value={form.year}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Branch</label>
+          <input
+            type="text"
+            name="branch"
+            value={form.branch}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium">Preferred Language</label>
+          <select
+            name="languagePref"
+            value={form.languagePref}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+          >
+            <option>English</option>
+            <option>Hindi</option>
+            <option>Tamil</option>
+            <option>Bengali</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            name="isAnonymous"
+            checked={form.isAnonymous}
+            onChange={handleChange}
+            className="mr-2"
+          />
+          <label className="text-sm">Keep my identity anonymous unless emergency</label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          {loading ? "Saving..." : "Complete Onboarding"}
+        </button>
+      </form>
+    </div>
   );
 }

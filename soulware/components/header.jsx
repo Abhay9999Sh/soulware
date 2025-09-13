@@ -1,44 +1,30 @@
-"use client"
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
-import { Button } from "./ui/button";
+"use client";
+
+import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-
+import { Button } from "./ui/button";
 
 const Header = () => {
-  const { user } = useUser();
-  const [userRole, setUserRole] = useState("");
+  // isLoaded and user come from Clerk's hook
+  const { isLoaded, user } = useUser();
+  // We'll store our database user profile here
+  const [dbUser, setDbUser] = useState(null);
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user?.id) {
-        try {
-          // Try to fetch from different profile collections
-          const collections = ['students', 'counselors', 'volunteers', 'admins'];
-          for (const collection of collections) {
-            const res = await fetch(`/api/profile/${collection.slice(0, -1)}?userId=${user.id}`);
-            if (res.ok) {
-              const data = await res.json();
-              if (data && data.userId) {
-                setUserRole(collection.slice(0, -1));
-                break;
-              }
-            }
+    // This effect runs when the Clerk user is loaded or changes
+    if (isLoaded && user) {
+      // Fetch our user profile from the database
+      fetch('/api/users/me')
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            setDbUser(data);
           }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-        }
-      }
-    };
-
-    fetchUserRole();
-  }, [user]);
+        })
+        .catch(err => console.error("Failed to fetch DB user:", err));
+    }
+  }, [isLoaded, user]); // Dependency array ensures this runs at the right time
 
   return (
     <header className="w-full bg-white border-b border-gray-200 shadow-sm py-2 sticky top-0 z-50">
@@ -46,25 +32,31 @@ const Header = () => {
         <Link href="/" className="font-bold text-xl text-gray-900 hover:text-primary transition-colors">
           Soulware
         </Link>
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4">
+          {/* This block shows only when a user is signed IN */}
           <SignedIn>
-            {userRole && (
-              <span className="text-sm text-gray-600 capitalize">
-                {userRole}
-              </span>
+            {/* Show the user's role from our database if it exists */}
+            {dbUser?.role && (
+              <Link
+                href={`/dashboard/${dbUser.role}`}
+                className="text-sm font-medium text-gray-600 capitalize bg-gray-100 px-3 py-1 rounded-full hover:bg-gray-200 transition"
+              >
+                Dashboard
+              </Link>
             )}
             <UserButton
+              afterSignOutUrl="/"
               appearance={{
                 elements: {
                   userButtonAvatarBox: "!w-10 !h-10",
-                  userButtonPopoverCard: "shadow-xl ",
-                  userPreviewMainIdentifier: "font-semibold",
                 },
               }}
             />
           </SignedIn>
+
+          {/* This block shows only when a user is signed OUT */}
           <SignedOut>
-            <SignInButton>
+            <SignInButton mode="modal">
               <Button variant="outline">Sign In</Button>
             </SignInButton>
           </SignedOut>
@@ -75,6 +67,3 @@ const Header = () => {
 };
 
 export default Header;
-
-//if user is signedout then show sigin button 
-//and if user is signedin then show user button
