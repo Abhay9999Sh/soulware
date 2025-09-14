@@ -1,4 +1,3 @@
-// models.js
 const mongoose = require("mongoose");
 
 //
@@ -22,6 +21,7 @@ const userSchema = new mongoose.Schema({
     year: String
   }
 });
+delete mongoose.models.User;
 const User = mongoose.model("User", userSchema);
 
 //
@@ -35,6 +35,7 @@ const counselorProfileSchema = new mongoose.Schema({
   availability: [{ day: String, from: String, to: String }],
   isVerified: { type: Boolean, default: false }
 });
+delete mongoose.models.CounselorProfile;
 const CounselorProfile = mongoose.model("CounselorProfile", counselorProfileSchema);
 
 //
@@ -45,6 +46,7 @@ const volunteerProfileSchema = new mongoose.Schema({
   areas: [String], // e.g. "exam stress", "anxiety support"
   isApproved: { type: Boolean, default: false }
 });
+delete mongoose.models.VolunteerProfile;
 const VolunteerProfile = mongoose.model("VolunteerProfile", volunteerProfileSchema);
 
 //
@@ -58,6 +60,7 @@ const appointmentSchema = new mongoose.Schema({
   notes: String,
   createdAt: { type: Date, default: Date.now }
 });
+delete mongoose.models.Appointment;
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 
 //
@@ -70,6 +73,7 @@ const messageSchema = new mongoose.Schema({
   type: { type: String, enum: ["bot", "peer", "counselor"], default: "peer" },
   createdAt: { type: Date, default: Date.now }
 });
+delete mongoose.models.Message;
 const Message = mongoose.model("Message", messageSchema);
 
 //
@@ -78,10 +82,11 @@ const Message = mongoose.model("Message", messageSchema);
 const botConversationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
-  summary: String, // optional - store chatbot summary
+  summary: String,
   createdAt: { type: Date, default: Date.now },
   lastInteractionAt: Date
 });
+delete mongoose.models.BotConversation;
 const BotConversation = mongoose.model("BotConversation", botConversationSchema);
 
 //
@@ -90,7 +95,7 @@ const BotConversation = mongoose.model("BotConversation", botConversationSchema)
 const libraryArticleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   slug: { type: String, unique: true },
-  category: String, // "anxiety", "relaxation", etc.
+  category: String,
   language: { type: String, default: "en" },
   contentMarkdown: String,
   resourceType: { type: String, enum: ["video", "audio", "guide"], default: "guide" },
@@ -99,6 +104,7 @@ const libraryArticleSchema = new mongoose.Schema({
   updatedAt: Date,
   published: { type: Boolean, default: false }
 });
+delete mongoose.models.LibraryArticle;
 const LibraryArticle = mongoose.model("LibraryArticle", libraryArticleSchema);
 
 //
@@ -109,8 +115,19 @@ const peerPostSchema = new mongoose.Schema({
   title: String,
   body: String,
   createdAt: { type: Date, default: Date.now },
-  tags: [String]
+  upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  tags: [String],
+  isNominated: { type: Boolean, default: false },      // volunteer nominations
+  isWeeklyHighlight: { type: Boolean, default: false } // admin highlight
 });
+
+peerPostSchema.add({
+  flaggedByVolunteer: { type: Boolean, default: false },
+  pushedToAdmin: { type: Boolean, default: false }
+});
+
+peerPostSchema.index({ createdAt: -1 });
+delete mongoose.models.PeerPost;
 const PeerPost = mongoose.model("PeerPost", peerPostSchema);
 
 const peerCommentSchema = new mongoose.Schema({
@@ -119,6 +136,8 @@ const peerCommentSchema = new mongoose.Schema({
   body: String,
   createdAt: { type: Date, default: Date.now }
 });
+peerCommentSchema.index({ createdAt: -1 });
+delete mongoose.models.PeerComment;
 const PeerComment = mongoose.model("PeerComment", peerCommentSchema);
 
 const peerReportSchema = new mongoose.Schema({
@@ -128,6 +147,7 @@ const peerReportSchema = new mongoose.Schema({
   reason: String,
   createdAt: { type: Date, default: Date.now }
 });
+delete mongoose.models.PeerReport;
 const PeerReport = mongoose.model("PeerReport", peerReportSchema);
 
 //
@@ -135,10 +155,11 @@ const PeerReport = mongoose.model("PeerReport", peerReportSchema);
 //
 const analyticsEventSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  eventType: String, // "login", "appointment_booked", "chat_started"
+  eventType: String,
   meta: Object,
   createdAt: { type: Date, default: Date.now }
 });
+delete mongoose.models.AnalyticsEvent;
 const AnalyticsEvent = mongoose.model("AnalyticsEvent", analyticsEventSchema);
 
 //
@@ -151,6 +172,7 @@ const auditLogSchema = new mongoose.Schema({
   details: Object,
   createdAt: { type: Date, default: Date.now }
 });
+delete mongoose.models.AuditLog;
 const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 
 //

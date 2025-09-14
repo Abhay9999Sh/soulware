@@ -1,110 +1,274 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-// We need to import the useUser hook from Clerk
-import { useUser } from '@clerk/nextjs'; 
-import { FiMessageSquare, FiCalendar, FiBookOpen, FiUsers, FiLoader } from 'react-icons/fi';
 
-const DashboardCard = ({ icon, title, description, link }) => (
-  <a href={link} className="block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 transition">
-    <div className="flex items-center mb-2">
-      <div className="text-2xl text-blue-600 mr-4">{icon}</div>
-      <h5 className="text-xl font-bold tracking-tight text-gray-900">{title}</h5>
-    </div>
-    <p className="font-normal text-gray-700">{description}</p>
-  </a>
-);
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  MessageCircle,
+  Calendar,
+  BookOpen,
+  Users,
+  X,
+  Send,
+  Sparkles,
+} from "lucide-react";
 
-export default function StudentDashboard() {
-  // Get the status of the Clerk user session
-  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
-  
-  const [dbUser, setDbUser] = useState(null);
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
+const motivationalQuotes = [
+  "🌟 Believe in yourself — you’re stronger than you think.",
+  "🚀 Small steps every day lead to big results.",
+  "💡 Progress, not perfection. Keep moving forward.",
+  "🔥 Your consistency is your superpower.",
+  "🌱 Growth takes time, but every effort counts.",
+];
+
+const StudentDashboard = () => {
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: "bot", text: "👋 Hi there! How can I support you today?" },
+  ]);
+  const [input, setInput] = useState("");
+  const [dailyQuote, setDailyQuote] = useState("");
+  const [mood, setMood] = useState(null);
+
+  const inputRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const router = useRouter();
 
   useEffect(() => {
-    // This condition is crucial: only fetch if Clerk is loaded AND user is signed in
-    if (isLoaded && isSignedIn) {
-      async function fetchData() {
-        try {
-          const [userRes, appointmentsRes] = await Promise.all([
-            fetch('/api/users/me'),
-            fetch('/api/appointments/student')
-          ]);
-          
-          const userData = await userRes.json();
-          const appointmentsData = await appointmentsRes.json();
+    const random = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+    setDailyQuote(random);
+  }, []);
 
-          if (userData && !userData.error) {
-            setDbUser(userData);
-          }
-          if (appointmentsData && !appointmentsData.error) {
-            setAppointments(appointmentsData);
-          }
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-        } catch (err) {
-          console.error("Failed to fetch dashboard data:", err);
-        } finally {
-          setLoading(false);
-        }
-      }
-      fetchData();
-    } else if (isLoaded && !isSignedIn) {
-      setLoading(false);
-    }
-  }, [isLoaded, isSignedIn]); // The effect must depend on the session status
+  const handleSend = () => {
+    if (!input.trim()) return;
+    const userMsg = { role: "user", text: input.trim() };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
 
-  // Show a loading spinner while Clerk is initializing
-  if (!isLoaded || loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <FiLoader className="animate-spin text-4xl text-blue-600" />
-      </div>
-    );
-  }
-  
-  if (!isSignedIn) {
-      return <p className="text-center mt-10">Please sign in to view your dashboard.</p>
-  }
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: "💡 That’s a great question. Keep going — you’re doing amazing!" },
+      ]);
+    }, 900);
+  };
+
+  const quickActions = [
+    {
+      title: "AI Chatbot",
+      description: "Talk with Soulware AI for guidance & motivation",
+      icon: MessageCircle,
+      action: () => setIsChatOpen(true),
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      title: "Appointments",
+      description: "View and manage your counseling sessions",
+      icon: Calendar,
+      action: () => router.push("/counseling"),
+      color: "from-green-500 to-green-600",
+    },
+    {
+      title: "Resources",
+      description: "Access curated mental health resources",
+      icon: BookOpen,
+      action: () => router.push("/library"),
+      color: "from-purple-500 to-purple-600",
+    },
+    {
+      title: "Peer Forum",
+      description: "Connect with fellow students and share experiences",
+      icon: Users,
+      action: () => router.push("/community"),
+      color: "from-pink-500 to-pink-600",
+    },
+  ];
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">
-        Welcome back, {dbUser?.profile?.nickname || clerkUser?.firstName || 'there'}!
-      </h1>
-      <p className="text-lg text-gray-600 mb-8">Your mental wellness hub. We're here to support you.</p>
+    <div className="p-6 space-y-10">
+      {/* Motivational Hero */}
+      <motion.section
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-4"
+      >
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+          Welcome back, Student 👋
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+          Every step you take today brings you closer to your goals. Trust the process—you’ve got this!
+        </p>
+      </motion.section>
 
-      {/* Grid layout (no changes) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <DashboardCard icon={<FiMessageSquare />} title="AI First-Aid Chatbot" link="/chat" description="Get immediate, guided support and coping strategies from our friendly AI assistant, available 24/7."/>
-        <DashboardCard icon={<FiCalendar />} title="Book an Appointment" link="/booking" description="Schedule a confidential session with a professional on-campus counselor at your convenience."/>
-        <DashboardCard icon={<FiBookOpen />} title="Resource Hub" link="/resources" description="Explore articles, videos, and relaxation audio guides on various mental wellness topics."/>
-        <DashboardCard icon={<FiUsers />} title="Peer Support Forum" link="/forum" description="Connect with fellow students in a moderated, anonymous space to share experiences and support each other."/>
-      </div>
+      {/* Daily Motivation */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white flex items-center gap-3"
+      >
+        <Sparkles className="w-6 h-6" />
+        <p className="text-lg font-medium">{dailyQuote}</p>
+      </motion.section>
 
-      {/* Upcoming Appointments (no changes) */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Upcoming Appointments</h2>
-        <div className="bg-white p-4 rounded-lg shadow divide-y divide-gray-200">
-          {appointments.length > 0 ? (
-            appointments.map(appt => (
-              <div key={appt._id} className="flex justify-between items-center p-3">
-                <div>
-                  <p className="font-semibold">{appt.counselorName || 'A Counselor'}</p>
-                  <p className="text-sm text-gray-600">
-                    Scheduled for: {new Date(appt.scheduledFor).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
-                  </p>
-                </div>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${appt.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                  {appt.status}
-                </span>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 p-3">You have no upcoming appointments.</p>
-          )}
+      {/* Quick Actions */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {quickActions.map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={item.action}
+              className={`cursor-pointer p-6 rounded-2xl shadow-lg bg-gradient-to-br ${item.color} text-white flex flex-col items-start hover:scale-105 transition-transform`}
+            >
+              <Icon className="w-8 h-8 mb-3" />
+              <h3 className="text-lg font-semibold">{item.title}</h3>
+              <p className="text-sm opacity-90">{item.description}</p>
+            </motion.div>
+          );
+        })}
+      </section>
+
+      {/* Mood Check-In */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-4"
+      >
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white">How are you feeling today?</h2>
+        <div className="flex gap-4 text-2xl">
+          {["😊", "😐", "😞"].map((m, i) => (
+            <button
+              key={i}
+              onClick={() => setMood(m)}
+              className={`p-3 rounded-full transition ${
+                mood === m ? "bg-blue-100 dark:bg-blue-800" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
         </div>
-      </div>
+        {mood && (
+          <p className="text-gray-600 dark:text-gray-300">
+            {mood === "😊" && "Awesome! Keep shining ✨"}
+            {mood === "😐" && "It’s okay to have neutral days — stay steady 💪"}
+            {mood === "😞" && "Sending you strength 💜 Remember, tough times pass."}
+          </p>
+        )}
+      </motion.section>
+
+      {/* Floating Chat Button */}
+      <motion.div
+        className="fixed bottom-6 right-6 z-50"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+      >
+        <motion.button
+          onClick={() => setIsChatOpen(true)}
+          className="relative p-4 rounded-full shadow-2xl text-white"
+          style={{
+            background: "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)",
+          }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 4 }}
+          >
+            <MessageCircle className="w-6 h-6" />
+          </motion.div>
+        </motion.button>
+      </motion.div>
+
+      {/* Chat Modal */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/50 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsChatOpen(false)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 22, stiffness: 220 }}
+              className="fixed bottom-0 right-0 w-full sm:w-[420px] h-[72vh] bg-white dark:bg-gray-900 shadow-2xl rounded-t-2xl flex flex-col z-50"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-semibold text-gray-800 dark:text-white">
+                    Soulware AI Chat
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`px-4 py-2 rounded-2xl max-w-[78%] ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="p-3 border-t dark:border-gray-700 flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none"
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                />
+                <button
+                  onClick={handleSend}
+                  className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+};
+
+export default StudentDashboard;

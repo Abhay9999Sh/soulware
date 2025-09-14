@@ -1,32 +1,23 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/mongoose";
+// Import the User model
 import { PeerReport, User } from "@/lib/models";
+import dbConnect from "@/lib/mongoose";
 
-// --- ADD THIS FUNCTION ---
-// GET all reports for the volunteer queue
-export async function GET() {
-  await dbConnect();
-  try {
-    const reports = await PeerReport.find({}).sort({ createdAt: "desc" }).lean();
-    return NextResponse.json(reports);
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch reports" }, { status: 500 });
-  }
-}
-
-// --- Your existing POST function stays the same ---
 export async function POST(req) {
   await dbConnect();
 
+  // The 'reporterId' from the request is the Clerk ID
   const { reporterId: reporterClerkId, targetType, targetId, reason } = await req.json();
 
+  // 1. Find the user who is reporting using their Clerk ID
   const reporter = await User.findOne({ clerkId: reporterClerkId });
   if (!reporter) {
     return NextResponse.json({ error: "Reporter user not found" }, { status: 404 });
   }
 
+  // 2. Create the new report using the reporter's MongoDB `_id`
   const report = new PeerReport({
-    reporterId: reporter._id,
+    reporterId: reporter._id, // Use the MongoDB ObjectId here
     targetType,
     targetId,
     reason,
