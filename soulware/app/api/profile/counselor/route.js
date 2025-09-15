@@ -30,9 +30,28 @@ export async function GET(req) {
   try {
     const client = await clientPromise;
     const db = client.db();
-    const profile = await db.collection("counselorProfiles").findOne({ userId });
-
-    return Response.json(profile || {});
+    
+    if (userId) {
+      // Get specific counselor by userId
+      let profile = await db.collection("counselors").findOne({ userId });
+      
+      // Fallback to counselorProfiles collection if not found
+      if (!profile) {
+        profile = await db.collection("counselorProfiles").findOne({ userId });
+      }
+      
+      return Response.json(profile || {});
+    } else {
+      // Get all counselors
+      let counselors = await db.collection("counselors").find({}).toArray();
+      
+      // Fallback to counselorProfiles if counselors collection is empty
+      if (counselors.length === 0) {
+        counselors = await db.collection("counselorProfiles").find({}).toArray();
+      }
+      
+      return Response.json(counselors);
+    }
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }

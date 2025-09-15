@@ -34,10 +34,12 @@ import { Button } from "@/components/ui/button";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 
 const Counseling = () => {
   const { isDark } = useTheme();
+  const { user } = useUser();
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -96,9 +98,250 @@ const Counseling = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSendMessage = () => {
+  const [currentBookingId, setCurrentBookingId] = useState(null);
+  const [chatInitialized, setChatInitialized] = useState(false);
+
+  const [pendingRequest, setPendingRequest] = useState(null);
+  const [requestStatus, setRequestStatus] = useState("idle"); // idle, pending, accepted, rejected
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [previousChats, setPreviousChats] = useState([]);
+  const [bookingFormData, setBookingFormData] = useState({
+    type: "video", // video, in-person, chat
+    date: "",
+    time: "",
+    isAnonymous: false,
+    urgency: "normal", // normal, urgent
+    notes: ""
+  });
+
+  const handleStartRealChat = async () => {
+    try {
+      setIsLoading(true);
+      const selectedCounselorData = counselors.find(c => c.id === selectedCounselor) || counselors[0];
+      
+      if (!selectedCounselorData) {
+        alert("No counselor available. Please try again.");
+        return;
+      }
+
+      // Create pending chat booking (not auto-accepted)
+      const bookingData = {
+        counselorId: selectedCounselorData.userId,
+        mode: "chat",
+        slot: new Date().toISOString(),
+        isAnonymous: true,
+        urgency: "immediate"
+      };
+
+      const bookingRes = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookingData),
+      });
+
+      const bookingResult = await bookingRes.json();
+
+      if (bookingResult.success) {
+        setPendingRequest({
+          bookingId: bookingResult.id,
+          counselor: selectedCounselorData
+        });
+        setRequestStatus("pending");
+        
+        // Start polling for status updates
+        pollBookingStatus(bookingResult.id);
+      } else {
+        throw new Error(bookingResult.error || "Failed to create chat request");
+      }
+    } catch (error) {
+      console.error("Error starting real chat:", error);
+      alert("Unable to send request to counselor. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const pollBookingStatus = async (bookingId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/bookings?bookingId=${bookingId}`);
+        const booking = await response.json();
+        
+        if (booking.status === "accepted") {
+          setRequestStatus("accepted");
+          clearInterval(pollInterval);
+          
+          // Auto-redirect based on session type after 2 seconds
+          setTimeout(() => {
+            if (booking.type === "chat") {
+              window.location.href = `/chat/${bookingId}`;
+            } else {
+              // For video/in-person sessions, redirect to dashboard to see scheduled session
+              window.location.href = `/dashboard/student`;
+            }
+          }, 2000);
+          
+        } else if (booking.status === "rejected") {
+          setRequestStatus("rejected");
+          clearInterval(pollInterval);
+          
+          // Reset after 3 seconds
+          setTimeout(() => {
+            setPendingRequest(null);
+            setRequestStatus("idle");
+          }, 3000);
+        }
+      } catch (error) {
+        console.error("Error polling booking status:", error);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    // Stop polling after 5 minutes
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      if (requestStatus === "pending") {
+        setRequestStatus("timeout");
+        setTimeout(() => {
+          setPendingRequest(null);
+          setRequestStatus("idle");
+        }, 3000);
+      }
+    }, 300000);
+  };
+
+  // Fetch previous chats
+  const fetchPreviousChats = async () => {
+    try {
+      const response = await fetch("/api/bookings?studentId=" + user?.id + "&status=completed");
+      if (response.ok) {
+        const data = await response.json();
+        setPreviousChats(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Error fetching previous chats:", error);
+    }
+  };
+
+  // Continue previous chat
+  const handleContinueChat = (chatBookingId) => {
+    window.location.href = `/chat-history/${chatBookingId}`;
+  };
+
+  // Handle booking form submission
+  const handleBookingSubmit = async () => {
+    try {
+      if (!bookingFormData.date || !bookingFormData.time) {
+        alert("Please select date and time for your session.");
+        return;
+      }
+
+      setIsLoading(true);
+      const selectedCounselorData = counselors.find(c => c.id === selectedCounselor) || counselors[0];
+      
+      if (!selectedCounselorData) {
+        alert("No counselor available. Please try again.");
+        return;
+      }
+
+      // Combine date and time
+      const sessionDateTime = new Date(`${bookingFormData.date}T${bookingFormData.time}`);
+
+      const bookingData = {
+        counselorId: selectedCounselorData.userId,
+        type: bookingFormData.type,
+        slot: sessionDateTime.toISOString(),
+        isAnonymous: bookingFormData.isAnonymous,
+        urgency: bookingFormData.urgency,
+        notes: bookingFormData.notes,
+        roomNumber: bookingFormData.type === "in-person" ? Math.floor(Math.random() * 100) + 1 : null
+      };
+
+      const bookingRes = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookingData),
+      });
+
+      const bookingResult = await bookingRes.json();
+
+      if (bookingResult.success) {
+        setPendingRequest({
+          bookingId: bookingResult.id,
+          counselor: selectedCounselorData,
+          type: bookingFormData.type
+        });
+        setRequestStatus("pending");
+        setShowBookingForm(false);
+        
+        // Start polling for status updates
+        pollBookingStatus(bookingResult.id);
+      } else {
+        throw new Error(bookingResult.error || "Failed to create session request");
+      }
+    } catch (error) {
+      console.error("Error creating session:", error);
+      alert("Unable to send session request. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load previous chats on component mount
+  useEffect(() => {
+    if (user?.id) {
+      fetchPreviousChats();
+    }
+  }, [user]);
+
+  const handleSendMessage = async () => {
     if (newMessage.trim() === "") return;
 
+    // If this is the first message, create a booking and chat
+    if (!chatInitialized && counselors.length > 0) {
+      try {
+        const selectedCounselor = counselors.find(c => c.id === selectedCounselor) || counselors[0];
+        
+        // Create immediate chat booking
+        const bookingData = {
+          counselorId: selectedCounselor.userId,
+          mode: "chat",
+          slot: new Date().toISOString(),
+          isAnonymous: true,
+          urgency: "immediate"
+        };
+
+        const bookingRes = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bookingData),
+        });
+
+        const bookingResult = await bookingRes.json();
+
+        if (bookingResult.success) {
+          // Auto-accept the booking
+          await fetch("/api/bookings", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingId: bookingResult.id,
+              status: "accepted"
+            }),
+          });
+
+          setCurrentBookingId(bookingResult.id);
+          setChatInitialized(true);
+          
+          // Redirect to real chat room
+          window.location.href = `/chat/${bookingResult.id}`;
+          return;
+        }
+      } catch (error) {
+        console.error("Error creating chat:", error);
+      }
+    }
+
+    // Fallback to static chat if booking creation fails
     const userMessage = {
       id: messages.length + 1,
       text: newMessage,
@@ -157,52 +400,55 @@ const Counseling = () => {
     setShowQuickActions(false);
   };
 
-  const counselors = [
-    {
-      id: 1,
-      name: "Dr. Sarah Chen",
-      specialty: "Anxiety & Depression",
-      rating: 4.9,
-      experience: "8 years",
-      status: "online",
-      avatar: "👩‍⚕️",
-      languages: ["English", "Mandarin"],
-      nextAvailable: "Available now"
-    },
-    {
-      id: 2,
-      name: "Dr. Marcus Johnson",
-      specialty: "Academic Stress & ADHD",
-      rating: 4.8,
-      experience: "6 years",
-      status: "online",
-      avatar: "👨‍⚕️",
-      languages: ["English", "Spanish"],
-      nextAvailable: "Available now"
-    },
-    {
-      id: 3,
-      name: "Dr. Elena Rodriguez",
-      specialty: "Relationships & Social Issues",
-      rating: 4.9,
-      experience: "10 years",
-      status: "busy",
-      avatar: "👩‍⚕️",
-      languages: ["English", "Spanish", "Portuguese"],
-      nextAvailable: "Available in 15 min"
-    },
-    {
-      id: 4,
-      name: "Dr. Aisha Patel",
-      specialty: "Trauma & PTSD",
-      rating: 4.9,
-      experience: "12 years",
-      status: "away",
-      avatar: "👩‍⚕️",
-      languages: ["English", "Hindi", "Gujarati"],
-      nextAvailable: "Available in 30 min"
-    }
-  ];
+  const [counselors, setCounselors] = useState([]);
+
+  // Fetch real counselors from API
+  useEffect(() => {
+    const fetchCounselors = async () => {
+      try {
+        const res = await fetch("/api/profile/counselor");
+        if (res.ok) {
+          const data = await res.json();
+          const counselorsList = Array.isArray(data) ? data : [];
+          
+          // Transform data to match UI expectations
+          const transformedCounselors = counselorsList.map((counselor, index) => ({
+            id: counselor._id || index + 1,
+            userId: counselor.userId,
+            name: counselor.name || "Dr. " + counselor.name,
+            specialty: counselor.specialization || "General Counseling",
+            department: counselor.department,
+            rating: 4.8 + (Math.random() * 0.2), // Random rating between 4.8-5.0
+            experience: "5+ years",
+            status: counselor.isAvailable ? "online" : "away",
+            avatar: "👨‍⚕️",
+            languages: ["English"],
+            nextAvailable: counselor.isAvailable ? "Available now" : "Available in 15 min"
+          }));
+          
+          setCounselors(transformedCounselors);
+        }
+      } catch (error) {
+        console.error("Error fetching counselors:", error);
+        // Fallback to static data if API fails
+        setCounselors([{
+          id: 1,
+          userId: "user_32bl51bUU3I67QF6Y9V9nO1JwIT",
+          name: "Abhi",
+          specialty: "Counselling",
+          department: "CSE",
+          rating: 4.9,
+          experience: "5+ years",
+          status: "online",
+          avatar: "�‍⚕️",
+          languages: ["English"],
+          nextAvailable: "Available now"
+        }]);
+      }
+    };
+
+    fetchCounselors();
+  }, []);
 
   const quickActions = [
     { text: "I'm feeling anxious about upcoming exams", icon: Heart, color: "text-red-500" },
@@ -593,6 +839,195 @@ const Counseling = () => {
                   </Button>
                 </motion.div>
               </motion.div>
+
+              {/* Real Chat Connection */}
+              <motion.div 
+                className="mt-6 text-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0 }}
+              >
+                {requestStatus === "idle" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                      {/* Start New Chat */}
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white p-6 rounded-xl text-base font-semibold shadow-lg transition-all duration-300 w-full h-auto flex flex-col items-center gap-3"
+                          onClick={handleStartRealChat}
+                          disabled={counselors.length === 0 || isLoading}
+                        >
+                          <MessageCircle className="w-8 h-8" />
+                          <div className="text-center">
+                            <div className="font-bold">Start New Chat</div>
+                            <div className="text-sm opacity-90">Real-time messaging</div>
+                          </div>
+                        </Button>
+                      </motion.div>
+
+                      {/* Continue Previous Chat */}
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white p-6 rounded-xl text-base font-semibold shadow-lg transition-all duration-300 w-full h-auto flex flex-col items-center gap-3"
+                          onClick={() => {
+                            if (previousChats.length > 0) {
+                              handleContinueChat(previousChats[0]._id);
+                            } else {
+                              alert("No previous chat sessions found.");
+                            }
+                          }}
+                          disabled={previousChats.length === 0}
+                        >
+                          <BookOpen className="w-8 h-8" />
+                          <div className="text-center">
+                            <div className="font-bold">Continue Chat</div>
+                            <div className="text-sm opacity-90">View chat history</div>
+                          </div>
+                        </Button>
+                      </motion.div>
+
+                      {/* Book Session */}
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-6 rounded-xl text-base font-semibold shadow-lg transition-all duration-300 w-full h-auto flex flex-col items-center gap-3"
+                          onClick={() => setShowBookingForm(true)}
+                          disabled={counselors.length === 0}
+                        >
+                          <Calendar className="w-8 h-8" />
+                          <div className="text-center">
+                            <div className="font-bold">Book Session</div>
+                            <div className="text-sm opacity-90">Video/In-person</div>
+                          </div>
+                        </Button>
+                      </motion.div>
+                    </div>
+
+                    {/* Status Messages */}
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Connect with {currentCounselor?.name || "an available counselor"} for confidential support
+                      </p>
+                      {previousChats.length > 0 && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          You have {previousChats.length} previous chat session{previousChats.length !== 1 ? 's' : ''}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {requestStatus === "pending" && pendingRequest && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6"
+                  >
+                    <div className="animate-pulse w-12 h-12 bg-yellow-100 dark:bg-yellow-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                      Waiting for Counselor Response
+                    </h3>
+                    <p className="text-yellow-700 dark:text-yellow-300 mb-4">
+                      Your {pendingRequest.type || 'chat'} session request has been sent to <strong>{pendingRequest.counselor.name}</strong>. 
+                      Please wait while they review your request.
+                    </p>
+                    {pendingRequest.type && pendingRequest.type !== "chat" && (
+                      <div className="text-sm text-yellow-600 dark:text-yellow-400 mb-2">
+                        Session Type: <span className="font-semibold capitalize">{pendingRequest.type}</span>
+                        {pendingRequest.type === "in-person" && (
+                          <div className="mt-1">Room will be assigned once accepted</div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex justify-center items-center space-x-2 text-sm text-yellow-600 dark:text-yellow-400">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <span className="ml-2">Waiting for confirmation...</span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {requestStatus === "accepted" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6"
+                  >
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+                      {pendingRequest?.type === "chat" ? "Chat Request Accepted!" : "Session Request Accepted!"}
+                    </h3>
+                    <p className="text-green-700 dark:text-green-300 mb-4">
+                      {pendingRequest?.type === "chat" 
+                        ? "Great! The counselor has accepted your request. You can now start chatting."
+                        : `Great! The counselor has accepted your ${pendingRequest?.type} session request. Check your dashboard for details.`
+                      }
+                    </p>
+                    <Button
+                      onClick={() => {
+                        if (pendingRequest?.type === "chat") {
+                          window.location.href = `/chat/${pendingRequest.bookingId}`;
+                        } else {
+                          window.location.href = `/dashboard/student`;
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+                    >
+                      {pendingRequest?.type === "chat" ? (
+                        <>
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Start Chat Now
+                        </>
+                      ) : (
+                        <>
+                          <Calendar className="w-4 h-4 mr-2" />
+                          View Dashboard
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+
+                {requestStatus === "rejected" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6"
+                  >
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <AlertCircle className="w-6 h-6 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                      Chat Request Declined
+                    </h3>
+                    <p className="text-red-700 dark:text-red-300 mb-4">
+                      The counselor is currently unavailable. Please try again later or contact our helpline.
+                    </p>
+                  </motion.div>
+                )}
+
+                {requestStatus === "timeout" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6"
+                  >
+                    <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Clock className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                      Request Timeout
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300 mb-4">
+                      The counselor didn't respond in time. Please try again or use our emergency helpline.
+                    </p>
+                  </motion.div>
+                )}
+              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -649,6 +1084,144 @@ const Counseling = () => {
           </div>
         </motion.section>
       </div>
+
+      {/* Booking Form Modal */}
+      {showBookingForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
+          >
+            <h3 className="text-xl font-bold mb-4">Book a Session</h3>
+            
+            <div className="space-y-4">
+              {/* Session Type */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Session Type</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant={bookingFormData.type === "video" ? "default" : "outline"}
+                    onClick={() => setBookingFormData(prev => ({ ...prev, type: "video" }))}
+                    className="flex flex-col items-center p-3 h-auto"
+                  >
+                    <Video className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Video</span>
+                  </Button>
+                  <Button
+                    variant={bookingFormData.type === "in-person" ? "default" : "outline"}
+                    onClick={() => setBookingFormData(prev => ({ ...prev, type: "in-person" }))}
+                    className="flex flex-col items-center p-3 h-auto"
+                  >
+                    <Users className="w-5 h-5 mb-1" />
+                    <span className="text-xs">In-Person</span>
+                  </Button>
+                  <Button
+                    variant={bookingFormData.type === "chat" ? "default" : "outline"}
+                    onClick={() => setBookingFormData(prev => ({ ...prev, type: "chat" }))}
+                    className="flex flex-col items-center p-3 h-auto"
+                  >
+                    <MessageCircle className="w-5 h-5 mb-1" />
+                    <span className="text-xs">Chat</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Date</label>
+                <input
+                  type="date"
+                  value={bookingFormData.date}
+                  onChange={(e) => setBookingFormData(prev => ({ ...prev, date: e.target.value }))}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                />
+              </div>
+
+              {/* Time */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Time</label>
+                <input
+                  type="time"
+                  value={bookingFormData.time}
+                  onChange={(e) => setBookingFormData(prev => ({ ...prev, time: e.target.value }))}
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                />
+              </div>
+
+              {/* Urgency */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Urgency</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={bookingFormData.urgency === "normal" ? "default" : "outline"}
+                    onClick={() => setBookingFormData(prev => ({ ...prev, urgency: "normal" }))}
+                  >
+                    Normal
+                  </Button>
+                  <Button
+                    variant={bookingFormData.urgency === "urgent" ? "default" : "outline"}
+                    onClick={() => setBookingFormData(prev => ({ ...prev, urgency: "urgent" }))}
+                  >
+                    Urgent
+                  </Button>
+                </div>
+              </div>
+
+              {/* Anonymous */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="anonymous"
+                  checked={bookingFormData.isAnonymous}
+                  onChange={(e) => setBookingFormData(prev => ({ ...prev, isAnonymous: e.target.checked }))}
+                  className="rounded"
+                />
+                <label htmlFor="anonymous" className="text-sm">
+                  Keep me anonymous
+                </label>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Additional Notes (Optional)</label>
+                <textarea
+                  value={bookingFormData.notes}
+                  onChange={(e) => setBookingFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Describe what you'd like to discuss..."
+                  className="w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 h-20 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setShowBookingForm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleBookingSubmit}
+                disabled={isLoading || !bookingFormData.date || !bookingFormData.time}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Booking...
+                  </>
+                ) : (
+                  "Send Request"
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </ProtectedRoute>
   );
 };

@@ -13,43 +13,11 @@ export async function GET() {
     const client = await clientPromise;
     const db = client.db();
 
-    // Find the counselor's MongoDB _id
-    const counselor = await db.collection('users').findOne({ clerkId });
-    if (!counselor) {
-      return NextResponse.json({ error: 'Counselor not found' }, { status: 404 });
-    }
-
-    // Find appointments for this counselor and join with student details
-    const appointments = await db.collection('appointments').aggregate([
-      {
-        $match: {
-          counselorId: new ObjectId(counselor._id),
-          status: { $in: ['pending', 'confirmed'] }
-        }
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'studentId',
-          foreignField: '_id',
-          as: 'studentInfo'
-        }
-      },
-      {
-        $unwind: '$studentInfo'
-      },
-      {
-        $project: {
-          _id: 1,
-          scheduledFor: 1,
-          status: 1,
-          studentName: '$studentInfo.profile.displayName'
-        }
-      },
-      {
-        $sort: { scheduledFor: 1 }
-      }
-    ]).toArray();
+    // Get appointments from bookings collection using clerkId directly
+    const appointments = await db.collection('bookings').find({
+      counselorId: clerkId,
+      status: { $in: ['pending', 'accepted', 'completed'] }
+    }).sort({ createdAt: -1 }).toArray();
 
     return NextResponse.json(appointments);
   } catch (error) {
