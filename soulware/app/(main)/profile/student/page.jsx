@@ -44,7 +44,7 @@ export default function StudentProfileForm() {
       const data = await res.json();
 
       if (data.success) {
-        router.push("/dashboard/student");
+        router.push("/quiz/starter");
       } else {
         alert("Error: " + data.error);
       }
