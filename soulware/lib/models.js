@@ -107,6 +107,22 @@ const libraryArticleSchema = new mongoose.Schema({
 delete mongoose.models.LibraryArticle;
 const LibraryArticle = mongoose.model("LibraryArticle", libraryArticleSchema);
 
+
+//
+const quizResultSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  quizType: { type: String, required: true, default: 'PHQ-9' },
+  score: { type: Number, required: true },
+  severity: { type: String, required: true },
+  answers: [{
+    question: String,
+    answer: Number
+  }],
+  createdAt: { type: Date, default: Date.now }
+});
+delete mongoose.models.QuizResult;
+const QuizResult = mongoose.model("QuizResult", quizResultSchema);
+
 //
 // 8. Peer Support Forum (Posts, Comments, Reports)
 //
@@ -190,5 +206,6 @@ module.exports = {
   PeerComment,
   PeerReport,
   AnalyticsEvent,
-  AuditLog
+  AuditLog,
+  QuizResult
 };
