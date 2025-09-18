@@ -1,4 +1,4 @@
-import clientPromise from "@/lib/mongodb";
+import { connectToDatabase } from "@/lib/db/mongodb";
 import { auth } from "@clerk/nextjs/server";
 import { ObjectId } from "mongodb";
 
@@ -13,8 +13,9 @@ export async function POST(req) {
       const { studentId, counselorId, mode, type, slot, isAnonymous, urgency, notes, roomNumber } = body;
       
       // Handle both 'mode' and 'type' field names for session type
-      const sessionType = mode || type || "chat";    const client = await clientPromise;
-    const db = client.db();
+      const sessionType = mode || type || "chat";
+    
+    const { db } = await connectToDatabase();
 
     // Generate room number for in-person meetings if not provided
     const finalRoomNumber = roomNumber || (sessionType === "in-person" ? `Room ${Math.floor(Math.random() * 20) + 1}` : null);
@@ -78,14 +79,30 @@ export async function GET(req) {
     const bookingId = searchParams.get("bookingId");
     const status = searchParams.get("status");
 
-    const client = await clientPromise;
-    const db = client.db();
+    const { db } = await connectToDatabase();
 
     // If bookingId is provided, return single booking
     if (bookingId) {
       const booking = await db.collection("bookings").findOne({
         _id: new ObjectId(bookingId)
       });
+      
+      if (booking && booking.counselorId) {
+        // Populate counselor information
+        const counselor = await db.collection("counselors").findOne({
+          userId: booking.counselorId
+        });
+        if (counselor) {
+          booking.counselorDetails = {
+            name: counselor.name,
+            firstName: counselor.firstName || counselor.name?.split(' ')[0],
+            lastName: counselor.lastName || counselor.name?.split(' ')[1] || '',
+            specialty: counselor.specialty,
+            avatar: counselor.avatar || '👨‍⚕️'
+          };
+        }
+      }
+      
       return Response.json(booking || {});
     }
 
@@ -101,6 +118,24 @@ export async function GET(req) {
       .sort({ createdAt: -1 })
       .toArray();
 
+    // Populate counselor information for each booking
+    for (let booking of bookings) {
+      if (booking.counselorId) {
+        const counselor = await db.collection("counselors").findOne({
+          userId: booking.counselorId
+        });
+        if (counselor) {
+          booking.counselorDetails = {
+            name: counselor.name,
+            firstName: counselor.firstName || counselor.name?.split(' ')[0],
+            lastName: counselor.lastName || counselor.name?.split(' ')[1] || '',
+            specialty: counselor.specialty,
+            avatar: counselor.avatar || '👨‍⚕️'
+          };
+        }
+      }
+    }
+
     return Response.json(bookings);
   } catch (error) {
     console.error("Get bookings error:", error);
@@ -113,8 +148,7 @@ export async function PUT(req) {
     const body = await req.json();
     const { bookingId, status, updatedBy } = body;
 
-    const client = await clientPromise;
-    const db = client.db();
+    const { db } = await connectToDatabase();
 
     // Get the booking first to check if it's a chat booking
     const booking = await db.collection("bookings").findOne({

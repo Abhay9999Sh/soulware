@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import clientPromise from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/db/mongodb';
 
 export async function GET() {
   try {
@@ -10,8 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const client = await clientPromise;
-    const db = client.db();
+    const { db } = await connectToDatabase();
 
     // First check if user exists in users collection
     let user = await db.collection('users').findOne({ clerkId });

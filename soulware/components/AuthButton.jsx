@@ -25,7 +25,7 @@ const AuthButton = ({
     
     if (isProtected && !isSignedIn) {
       // Redirect to sign-in page if trying to access protected route
-      router.push("/sign-in");
+      router.push("/signin");
       return;
     }
     

@@ -8,7 +8,6 @@ const isProtectedRoute = createRouteMatcher([
   "/profile(.*)"
 ])
 
-
 export default clerkMiddleware(async (auth, req) => {
   const {userId} = await auth();
   if(!userId && isProtectedRoute(req)) {

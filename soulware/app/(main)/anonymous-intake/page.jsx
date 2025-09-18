@@ -61,7 +61,7 @@ export default function AnonymousIntake() {
         // Find available counselor for immediate chat
         const availableCounselor = availableCounselors.find(c => 
           form.counselorPreference === "any" || c.userId === form.counselorPreference
-        ) || availableCounselors.find(c => c.userId === "user_32bl51bUU3I67QF6Y9V9nO1JwIT"); // Fallback to your specific counselor
+        );
 
         if (availableCounselor) {
           // Create immediate chat booking

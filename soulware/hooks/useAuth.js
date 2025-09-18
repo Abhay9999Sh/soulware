@@ -4,7 +4,7 @@ import { useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export const useAuthRedirect = (redirectTo = "/sign-in") => {
+export const useAuthRedirect = (redirectTo = "/signin") => {
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
 

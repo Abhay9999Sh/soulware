@@ -36,15 +36,27 @@ export default function StudentProfileForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
+          clerkId: user.id,
+          email: form.email,
           role: "student",
+          isOnboarded: true,
+          profile: {
+            name: form.name,
+            displayName: form.name,
+          },
+          metadata: {
+            enrollmentNo: form.enrollmentNo,
+            year: form.year,
+            branch: form.branch,
+            languagePref: form.languagePref,
+          },
         }),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        router.push("/quiz/starter");
+        router.push("/dashboard/student");
       } else {
         alert("Error: " + data.error);
       }

@@ -214,8 +214,13 @@ export default function StudentDashboard() {
                             {booking.mode || booking.type || "Chat"} Session
                           </h3>
                           <p className="text-gray-600">
-                            with {booking.counselorId?.firstName || "Counselor"} {booking.counselorId?.lastName || ""}
+                            with {booking.counselorDetails?.name || booking.counselorDetails?.firstName || "Counselor"} {booking.counselorDetails?.lastName || ""}
                           </p>
+                          {booking.counselorDetails?.specialty && (
+                            <p className="text-sm text-gray-500">
+                              {booking.counselorDetails.specialty}
+                            </p>
+                          )}
                           <div className="flex items-center text-sm text-gray-500 mt-1">
                             <Calendar className="w-4 h-4 mr-1" />
                             {new Date(booking.slot || booking.createdAt).toLocaleDateString()}
@@ -242,9 +247,24 @@ export default function StudentDashboard() {
                         {booking.status === "accepted" && (
                           <Button
                             onClick={() => handleJoinSession(booking)}
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                           >
-                            Join Session
+                            {booking.mode === "video" || booking.type === "video" ? (
+                              <>
+                                <Video className="w-4 h-4" />
+                                Join Video Call
+                              </>
+                            ) : booking.mode === "chat" || booking.type === "chat" ? (
+                              <>
+                                <MessageCircle className="w-4 h-4" />
+                                Join Chat
+                              </>
+                            ) : (
+                              <>
+                                <Users className="w-4 h-4" />
+                                View Details
+                              </>
+                            )}
                           </Button>
                         )}
                         

@@ -411,8 +411,13 @@ const Counseling = () => {
           const data = await res.json();
           const counselorsList = Array.isArray(data) ? data : [];
           
+          // Filter only verified counselors (treat undefined as verified for backward compatibility)
+          const verifiedCounselors = counselorsList.filter(counselor => 
+            counselor.isVerified !== false // Show if verified=true or undefined
+          );
+          
           // Transform data to match UI expectations
-          const transformedCounselors = counselorsList.map((counselor, index) => ({
+          const transformedCounselors = verifiedCounselors.map((counselor, index) => ({
             id: counselor._id || index + 1,
             userId: counselor.userId,
             name: counselor.name || "Dr. " + counselor.name,
@@ -420,30 +425,20 @@ const Counseling = () => {
             department: counselor.department,
             rating: 4.8 + (Math.random() * 0.2), // Random rating between 4.8-5.0
             experience: "5+ years",
-            status: counselor.isAvailable ? "online" : "away",
+            status: counselor.status || "offline",
             avatar: "👨‍⚕️",
-            languages: ["English"],
-            nextAvailable: counselor.isAvailable ? "Available now" : "Available in 15 min"
+            languages: counselor.languages || ["English"],
+            nextAvailable: counselor.status === "online" ? "Available now" : "Available in 15 min",
+            isVerified: counselor.isVerified,
+            qualification: counselor.qualification,
+            bio: counselor.bio
           }));
           
           setCounselors(transformedCounselors);
         }
       } catch (error) {
         console.error("Error fetching counselors:", error);
-        // Fallback to static data if API fails
-        setCounselors([{
-          id: 1,
-          userId: "user_32bl51bUU3I67QF6Y9V9nO1JwIT",
-          name: "Abhi",
-          specialty: "Counselling",
-          department: "CSE",
-          rating: 4.9,
-          experience: "5+ years",
-          status: "online",
-          avatar: "�‍⚕️",
-          languages: ["English"],
-          nextAvailable: "Available now"
-        }]);
+        setCounselors([]); // No fallback - show empty state if API fails
       }
     };
 
@@ -565,7 +560,14 @@ const Counseling = () => {
                   Available Counselors
                 </h3>
                 <div className="space-y-4">
-                  {counselors.map((counselor) => (
+                  {counselors.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="text-4xl mb-4">🔍</div>
+                      <p className="text-gray-600 dark:text-gray-400 mb-2">No counselors available</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500">Please try again later or contact support</p>
+                    </div>
+                  ) : (
+                    counselors.map((counselor) => (
                     <motion.div
                       key={counselor.id}
                       className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
@@ -597,7 +599,8 @@ const Counseling = () => {
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{counselor.nextAvailable}</p>
                     </motion.div>
-                  ))}
+                  ))
+                  )}
                 </div>
 
                 <motion.div 

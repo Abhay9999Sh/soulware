@@ -252,9 +252,35 @@ export default function Page() {
         <div>
           <h1 className="text-3xl font-bold">Counselor Dashboard</h1>
           {counselorProfile && (
-            <p className="text-gray-600 mt-1">
-              Welcome back, {counselorProfile.name} - {counselorProfile.specialization}
-            </p>
+            <div className="mt-1">
+              <p className="text-gray-600">
+                Welcome back, {counselorProfile.name} - {counselorProfile.specialization}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  counselorProfile.isVerified 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {counselorProfile.isVerified ? '✅ Verified' : '⏳ Pending Verification'}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  counselorProfile.status === 'online' 
+                    ? 'bg-green-100 text-green-800' 
+                    : counselorProfile.status === 'busy'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {counselorProfile.status === 'online' ? '🟢 Online' : 
+                   counselorProfile.status === 'busy' ? '🔴 Busy' : '⚫ Offline'}
+                </span>
+              </div>
+              {!counselorProfile.isVerified && (
+                <p className="text-sm text-yellow-600 mt-2">
+                  Your profile is being reviewed by our admin team. You'll be notified once verified.
+                </p>
+              )}
+            </div>
           )}
         </div>
         <button
@@ -469,9 +495,35 @@ export default function Page() {
                       <span className="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
                         ✅ Confirmed
                       </span>
+                      
+                      {/* Join Session Button */}
+                      {getSessionType(booking) === "video" && (
+                        <button
+                          onClick={() => window.location.href = `/video/${booking._id}`}
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition shadow-md flex items-center gap-1"
+                        >
+                          📹 Join Video Call
+                        </button>
+                      )}
+                      
+                      {getSessionType(booking) === "chat" && (
+                        <button
+                          onClick={() => window.location.href = `/chat/${booking._id}`}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow-md flex items-center gap-1"
+                        >
+                          💬 Join Chat
+                        </button>
+                      )}
+                      
+                      {getSessionType(booking) === "in-person" && (
+                        <div className="bg-purple-100 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium text-center">
+                          🏢 Room: {booking.roomNumber || "TBA"}
+                        </div>
+                      )}
+                      
                       <button
                         onClick={() => handleStatusUpdate(booking._id, "completed")}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition shadow-md"
+                        className="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition shadow-md"
                       >
                         Mark Complete
                       </button>

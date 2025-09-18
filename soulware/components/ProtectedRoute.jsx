@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children, fallback = null }) => {
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push("/sign-in");
+      router.push("/signin");
     }
   }, [isLoaded, isSignedIn, router]);
 
@@ -48,7 +48,7 @@ const ProtectedRoute = ({ children, fallback = null }) => {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Access Denied</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-4">You need to be signed in to access this page.</p>
           <button
-            onClick={() => router.push("/sign-in")}
+            onClick={() => router.push("/signin")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
           >
             Sign In

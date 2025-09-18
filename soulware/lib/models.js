@@ -7,13 +7,15 @@ const userSchema = new mongoose.Schema({
   clerkId: { type: String, unique: true, required: true }, // from Clerk auth
   email: { type: String, required: true },
   role: { type: String, enum: ["student", "volunteer", "counselor", "admin"], required: true },
+  isOnboarded: { type: Boolean, default: false }, // Track onboarding completion
   createdAt: { type: Date, default: Date.now },
   lastLoginAt: Date,
   status: { type: String, enum: ["active", "suspended"], default: "active" },
   profile: {
     nickname: String,
     avatarUrl: String,
-    displayName: String
+    displayName: String,
+    name: String, // Full name from onboarding
   },
   metadata: {
     collegeId: String,
@@ -27,6 +29,29 @@ const User = mongoose.model("User", userSchema);
 //
 // 2. Counselor Profile
 //
+// Updated Counselor Schema for new onboarding system
+const counselorSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true }, // Clerk user ID
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  specialization: { type: String, required: true },
+  qualification: { type: String, required: true, default: "PhD in Clinical Psychology" },
+  languages: { type: [String], default: ["English"] },
+  bio: { type: String, required: true },
+  isVerified: { type: Boolean, default: false }, // Admin needs to verify
+  availableSlots: [{ type: Date }],
+  availableDays: [{ type: String }], // ["Monday", "Tuesday", etc.]
+  timeSlots: [{ type: String }], // ["09:00", "10:00", etc.]
+  unavailableDates: [{ type: Date }],
+  isAvailable: { type: Boolean, default: true },
+  status: { type: String, enum: ["online", "offline", "busy"], default: "offline" },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+delete mongoose.models.Counselor;
+const Counselor = mongoose.model("Counselor", counselorSchema);
+
+// Legacy counselor profile schema (kept for backward compatibility)
 const counselorProfileSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", unique: true },
   qualification: String,
@@ -196,6 +221,7 @@ const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 //
 module.exports = {
   User,
+  Counselor,
   CounselorProfile,
   VolunteerProfile,
   Appointment,

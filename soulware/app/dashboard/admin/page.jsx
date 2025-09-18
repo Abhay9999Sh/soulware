@@ -1,12 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-
-// --- Mock useUser for auth (replace with Clerk hook in production) ---
-const useUser = () => ({
-  isLoaded: true,
-  isSignedIn: true,
-});
+import { useUser } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 // --- SVG Icons ---
 const IconUsers = (props) => (
@@ -76,6 +74,8 @@ export default function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(null); // "counselor" | "volunteer" | null
+  const [counselors, setCounselors] = useState([]);
+  const [counselorsLoading, setCounselorsLoading] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -91,9 +91,39 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchCounselors = async () => {
+    setCounselorsLoading(true);
+    try {
+      const res = await fetch("/api/profile/counselor");
+      const data = await res.json();
+      setCounselors(data || []);
+    } catch (err) {
+      console.error("Failed to fetch counselors:", err);
+    } finally {
+      setCounselorsLoading(false);
+    }
+  };
+
+  const verifyCounselor = async (userId, action) => {
+    try {
+      const res = await fetch("/api/profile/counselor", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action }),
+      });
+      
+      if (res.ok) {
+        fetchCounselors(); // Refresh the list
+      }
+    } catch (err) {
+      console.error("Failed to verify counselor:", err);
+    }
+  };
+
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       fetchData();
+      fetchCounselors();
     }
   }, [isLoaded, isSignedIn]);
 
@@ -141,6 +171,76 @@ export default function AdminDashboard() {
           </form>
         </motion.div>
       )}
+
+      {/* Counselor Management */}
+      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Counselor Management</h2>
+          <Button onClick={fetchCounselors} disabled={counselorsLoading}>
+            {counselorsLoading ? "Loading..." : "Refresh"}
+          </Button>
+        </div>
+        
+        {counselorsLoading ? (
+          <div className="text-center py-8">
+            <IconLoader className="animate-spin text-4xl text-blue-600 mx-auto mb-2" />
+            <p>Loading counselors...</p>
+          </div>
+        ) : counselors.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No counselors found
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {counselors.map((counselor) => (
+              <Card key={counselor.userId} className="border">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold text-lg">{counselor.name}</h3>
+                        <Badge variant={counselor.isVerified ? "default" : "secondary"}>
+                          {counselor.isVerified ? "Verified" : "Pending"}
+                        </Badge>
+                        <Badge variant={counselor.status === "online" ? "default" : "outline"}>
+                          {counselor.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">📧 {counselor.email}</p>
+                      <p className="text-sm text-gray-600 mb-1">🎯 {counselor.specialization}</p>
+                      <p className="text-sm text-gray-600 mb-1">🎓 {counselor.qualification}</p>
+                      <p className="text-sm text-gray-600 mb-2">🗣️ {counselor.languages?.join(", ")}</p>
+                      <p className="text-sm text-gray-700 mb-2">{counselor.bio}</p>
+                      <p className="text-xs text-gray-500">
+                        Created: {new Date(counselor.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 ml-4">
+                      {!counselor.isVerified ? (
+                        <Button 
+                          size="sm" 
+                          onClick={() => verifyCounselor(counselor.userId, "verify")}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Verify
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => verifyCounselor(counselor.userId, "unverify")}
+                        >
+                          Unverify
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Stats + Nominations + Chart + Student Activity + AI Insights + What's Going On */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
