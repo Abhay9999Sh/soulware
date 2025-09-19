@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const ADHDPage = () => {
   const symptoms = [
@@ -177,6 +178,25 @@ const ADHDPage = () => {
               Managing ADHD in academic settings, study strategies, and building 
               supportive routines for college success.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ADHD Educational Video */}
+      <section className="relative px-6 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <VideoPlayer
+              videoUrl="https://res.cloudinary.com/dhdvyrvh1/video/upload/v1758286958/ADHD_ym0yit.mp4"
+              title="Understanding ADHD: Strategies and Support"
+              description="Learn about ADHD symptoms, management strategies, and how to build effective support systems for academic and personal success."
+              className="mb-12"
+            />
           </motion.div>
         </div>
       </section>

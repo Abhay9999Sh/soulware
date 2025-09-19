@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const SadnessPage = () => {
   const normalSadness = [
@@ -161,6 +162,25 @@ const SadnessPage = () => {
               Understanding normal sadness vs. clinical depression, healthy grieving, 
               and emotional processing for students.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Sadness Educational Video */}
+      <section className="relative px-6 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <VideoPlayer
+              videoUrl="https://res.cloudinary.com/dhdvyrvh1/video/upload/v1758287262/sadness_dt5zlf.mp4"
+              title="Coping with Sadness: Healthy Processing and Healing"
+              description="Learn healthy ways to process sadness, differentiate between temporary sadness and depression, and develop emotional resilience."
+              className="mb-12"
+            />
           </motion.div>
         </div>
       </section>

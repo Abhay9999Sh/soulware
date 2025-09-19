@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const StressPage = () => {
   const symptoms = [
@@ -182,6 +183,25 @@ const StressPage = () => {
               Academic stress management, time management, and building resilience 
               during challenging periods of student life.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Stress Educational Video */}
+      <section className="relative px-6 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <VideoPlayer
+              videoUrl="https://res.cloudinary.com/dhdvyrvh1/video/upload/v1758287277/Stress_iyirpx.mp4"
+              title="Stress Management: Techniques for Academic and Life Balance"
+              description="Learn effective stress management techniques, time management skills, and healthy coping strategies for maintaining balance in academic and personal life."
+              className="mb-12"
+            />
           </motion.div>
         </div>
       </section>

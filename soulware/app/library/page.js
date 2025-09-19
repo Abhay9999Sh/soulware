@@ -4,24 +4,18 @@ import { motion } from "framer-motion";
 import { 
   BookOpen, 
   Search, 
-  Filter, 
   Clock, 
-  User, 
   Heart, 
   Brain, 
   Zap,
-  Star,
   ArrowRight,
-  Bookmark,
-  Share2,
-  Eye,
   Compass,
   Book,
   Lightbulb,
-  Shield,
   Users,
   Target,
-  ChevronRight
+  ChevronRight,
+  Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AuthButton from "@/components/AuthButton";
@@ -39,6 +33,7 @@ const Library = () => {
       icon: Brain,
       color: "blue",
       articles: 1,
+      videos: 1,
       readTime: "5 min read"
     },
     {
@@ -48,6 +43,7 @@ const Library = () => {
       icon: Heart,
       color: "red",
       articles: 1,
+      videos: 1,
       readTime: "5 min read"
     },
     {
@@ -57,6 +53,7 @@ const Library = () => {
       icon: Users,
       color: "purple",
       articles: 1,
+      videos: 1,
       readTime: "5 min read"
     },
     {
@@ -66,6 +63,7 @@ const Library = () => {
       icon: BookOpen,
       color: "indigo",
       articles: 1,
+      videos: 1,
       readTime: "5 min read"
     },
     {
@@ -75,6 +73,7 @@ const Library = () => {
       icon: Zap,
       color: "yellow",
       articles: 1,
+      videos: 1,
       readTime: "5 min read"
     },
     {
@@ -84,6 +83,7 @@ const Library = () => {
       icon: Target,
       color: "green",
       articles: 1,
+      videos: 1,
       readTime: "5 min read"
     }
   ];
@@ -106,65 +106,38 @@ const Library = () => {
     return colorMap[color] || colorMap.blue;
   };
 
+  const pluralize = (count, word) => `${count} ${count === 1 ? word : word + "s"}`;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-900 dark:via-blue-900 dark:to-purple-900 transition-all duration-1000">
-      {/* Animated Background Elements */}
+      {/* Background Animations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-20 left-20 w-32 h-32 bg-blue-200/20 rounded-full blur-xl"
-          animate={{
-            y: [0, -30, 0],
-            x: [0, 20, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+          animate={{ y: [0, -30, 0], x: [0, 20, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute top-40 right-32 w-24 h-24 bg-purple-200/20 rounded-full blur-xl"
-          animate={{
-            y: [0, 20, 0],
-            x: [0, -15, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+          animate={{ y: [0, 20, 0], x: [0, -15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute bottom-32 left-1/3 w-40 h-40 bg-green-200/20 rounded-full blur-xl"
-          animate={{
-            y: [0, -25, 0],
-            x: [0, 30, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+          animate={{ y: [0, -25, 0], x: [0, 30, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute top-1/2 right-1/4 w-16 h-16 bg-yellow-200/20 rounded-full blur-xl"
-          animate={{
-            y: [0, -20, 0],
-            x: [0, 10, 0],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
       {/* Header Section */}
       <section className="relative px-6 py-16">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto text-center">
           <motion.div
-            className="text-center mb-16"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -191,33 +164,16 @@ const Library = () => {
             </p>
 
             {/* Search Bar */}
-            <motion.div
-              className="max-w-3xl mx-auto relative"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              <div className="relative">
-                <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
-                <input
-                  type="text"
-                  placeholder="Search for topics like 'Anxiety', 'Stress', 'Depression'..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-16 pr-6 py-5 text-lg border-2 border-gray-200 dark:border-gray-600 rounded-2xl focus:border-blue-500 focus:outline-none transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                />
-                <motion.div
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2"
-                  animate={{ 
-                    opacity: searchQuery ? 1 : 0.3,
-                    scale: searchQuery ? 1.1 : 1
-                  }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Search className="w-5 h-5 text-blue-500" />
-                </motion.div>
-              </div>
-            </motion.div>
+            <div className="max-w-3xl mx-auto relative">
+              <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
+              <input
+                type="text"
+                placeholder="Search for topics like 'Anxiety', 'Stress', 'Depression'..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-16 pr-6 py-5 text-lg border-2 border-gray-200 dark:border-gray-600 rounded-2xl focus:border-blue-500 focus:outline-none transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
           </motion.div>
         </div>
       </section>
@@ -270,9 +226,15 @@ const Library = () => {
                     </p>
                     
                     <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center">
-                        <Book className="w-4 h-4 mr-2" />
-                        <span>{topic.articles} article</span>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <Book className="w-4 h-4 mr-1" />
+                          <span>{pluralize(topic.articles, "article")}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Video className="w-4 h-4 mr-1" />
+                          <span>{pluralize(topic.videos, "video")}</span>
+                        </div>
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2" />
@@ -317,7 +279,6 @@ const Library = () => {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent"></div>
             </div>

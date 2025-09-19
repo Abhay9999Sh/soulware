@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const AnxietyPage = () => {
   const symptoms = [
@@ -175,6 +176,25 @@ const AnxietyPage = () => {
               A comprehensive guide to anxiety disorders, panic attacks, and practical 
               coping strategies specifically designed for college students.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Anxiety Educational Video */}
+      <section className="relative px-6 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <VideoPlayer
+              videoUrl="https://res.cloudinary.com/dhdvyrvh1/video/upload/v1758287213/Anxiety_ytvslv.mp4"
+              title="Managing Anxiety: Techniques and Coping Strategies"
+              description="Discover effective techniques for managing anxiety, including breathing exercises, grounding methods, and building resilience for daily challenges."
+              className="mb-12"
+            />
           </motion.div>
         </div>
       </section>
