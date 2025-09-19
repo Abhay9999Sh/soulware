@@ -1,10 +1,8 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
-//
-// 1. User (all roles)
-//
+// --- 1. User (all roles) ---
 const userSchema = new mongoose.Schema({
-  clerkId: { type: String, unique: true, required: true }, // from Clerk auth
+  clerkId: { type: String, unique: true, required: true },
   email: { type: String, required: true },
   role: { type: String, enum: ["student", "volunteer", "counselor", "admin"], required: true },
   createdAt: { type: Date, default: Date.now },
@@ -21,64 +19,65 @@ const userSchema = new mongoose.Schema({
     year: String
   }
 });
-delete mongoose.models.User;
-const User = mongoose.model("User", userSchema);
+export const User = mongoose.models.User || mongoose.model("User", userSchema);
 
-//
-// 2. Counselor Profile
-//
+// --- 2. Counselor Profile ---
 const counselorProfileSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", unique: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", unique: true, required: true },
   qualification: String,
   languages: [String],
   bio: String,
   availability: [{ day: String, from: String, to: String }],
   isVerified: { type: Boolean, default: false }
 });
-delete mongoose.models.CounselorProfile;
-const CounselorProfile = mongoose.model("CounselorProfile", counselorProfileSchema);
+export const CounselorProfile = mongoose.models.CounselorProfile || mongoose.model("CounselorProfile", counselorProfileSchema);
 
-//
-// 3. Volunteer Profile
-//
+// --- 3. Volunteer Profile ---
 const volunteerProfileSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", unique: true },
-  areas: [String], // e.g. "exam stress", "anxiety support"
+  areas: [String],
   isApproved: { type: Boolean, default: false }
 });
-delete mongoose.models.VolunteerProfile;
-const VolunteerProfile = mongoose.model("VolunteerProfile", volunteerProfileSchema);
+export const VolunteerProfile = mongoose.models.VolunteerProfile || mongoose.model("VolunteerProfile", volunteerProfileSchema);
 
-//
-// 4. Appointment (Booking system)
-//
+// --- 4. Appointment (Booking system) - CORRECTED ---
 const appointmentSchema = new mongoose.Schema({
   studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   counselorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   scheduledFor: { type: Date, required: true },
-  status: { type: String, enum: ["pending", "confirmed", "completed", "cancelled"], default: "pending" },
+  mode: { 
+    type: String, 
+    enum: ["chat", "offline"], 
+    required: true 
+  },
+  status: { 
+    type: String, 
+    enum: ["pending", "confirmed", "rejected", "completed", "cancelled"], 
+    default: "pending" 
+  },
   notes: String,
-  createdAt: { type: Date, default: Date.now }
-});
-delete mongoose.models.Appointment;
-const Appointment = mongoose.model("Appointment", appointmentSchema);
+}, { timestamps: true });
+export const Appointment = mongoose.models.Appointment || mongoose.model("Appointment", appointmentSchema);
 
-//
-// 5. Messages (chat, both bot & peer support)
-//
+// --- 5. Messages (chat) - CORRECTED ---
 const messageSchema = new mongoose.Schema({
-  fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  toUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  conversationId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Conversation", 
+    required: true, 
+    index: true 
+  }, 
+  senderId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "User", 
+    required: true 
+  },
   text: String,
-  type: { type: String, enum: ["bot", "peer", "counselor"], default: "peer" },
-  createdAt: { type: Date, default: Date.now }
-});
-delete mongoose.models.Message;
-const Message = mongoose.model("Message", messageSchema);
+}, { timestamps: true });
 
-//
-// 6. Bot Conversation (AI Chatbot sessions)
-//
+export const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
+
+// --- 6. Bot Conversation ---
 const botConversationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }],
@@ -86,12 +85,9 @@ const botConversationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   lastInteractionAt: Date
 });
-delete mongoose.models.BotConversation;
-const BotConversation = mongoose.model("BotConversation", botConversationSchema);
+export const BotConversation = mongoose.models.BotConversation || mongoose.model("BotConversation", botConversationSchema);
 
-//
-// 7. Library Article (Psychoeducational Hub)
-//
+// --- 7. Library Article ---
 const libraryArticleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   slug: { type: String, unique: true },
@@ -104,11 +100,9 @@ const libraryArticleSchema = new mongoose.Schema({
   updatedAt: Date,
   published: { type: Boolean, default: false }
 });
-delete mongoose.models.LibraryArticle;
-const LibraryArticle = mongoose.model("LibraryArticle", libraryArticleSchema);
+export const LibraryArticle = mongoose.models.LibraryArticle || mongoose.model("LibraryArticle", libraryArticleSchema);
 
-
-//
+// --- Quiz Result ---
 const quizResultSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   quizType: { type: String, required: true, default: 'PHQ-9' },
@@ -120,12 +114,9 @@ const quizResultSchema = new mongoose.Schema({
   }],
   createdAt: { type: Date, default: Date.now }
 });
-delete mongoose.models.QuizResult;
-const QuizResult = mongoose.model("QuizResult", quizResultSchema);
+export const QuizResult = mongoose.models.QuizResult || mongoose.model("QuizResult", quizResultSchema);
 
-//
-// 8. Peer Support Forum (Posts, Comments, Reports)
-//
+// --- 8. Peer Support Forum ---
 const peerPostSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   title: String,
@@ -133,18 +124,13 @@ const peerPostSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   tags: [String],
-  isNominated: { type: Boolean, default: false },      // volunteer nominations
-  isWeeklyHighlight: { type: Boolean, default: false } // admin highlight
-});
-
-peerPostSchema.add({
+  isNominated: { type: Boolean, default: false },
+  isWeeklyHighlight: { type: Boolean, default: false },
   flaggedByVolunteer: { type: Boolean, default: false },
   pushedToAdmin: { type: Boolean, default: false }
 });
-
 peerPostSchema.index({ createdAt: -1 });
-delete mongoose.models.PeerPost;
-const PeerPost = mongoose.model("PeerPost", peerPostSchema);
+export const PeerPost = mongoose.models.PeerPost || mongoose.model("PeerPost", peerPostSchema);
 
 const peerCommentSchema = new mongoose.Schema({
   postId: { type: mongoose.Schema.Types.ObjectId, ref: "PeerPost", required: true },
@@ -153,8 +139,7 @@ const peerCommentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 peerCommentSchema.index({ createdAt: -1 });
-delete mongoose.models.PeerComment;
-const PeerComment = mongoose.model("PeerComment", peerCommentSchema);
+export const PeerComment = mongoose.models.PeerComment || mongoose.model("PeerComment", peerCommentSchema);
 
 const peerReportSchema = new mongoose.Schema({
   targetType: { type: String, enum: ["post", "comment"], required: true },
@@ -163,24 +148,18 @@ const peerReportSchema = new mongoose.Schema({
   reason: String,
   createdAt: { type: Date, default: Date.now }
 });
-delete mongoose.models.PeerReport;
-const PeerReport = mongoose.model("PeerReport", peerReportSchema);
+export const PeerReport = mongoose.models.PeerReport || mongoose.model("PeerReport", peerReportSchema);
 
-//
-// 9. Analytics Event (Admin Dashboard)
-//
+// --- 9. Analytics Event ---
 const analyticsEventSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   eventType: String,
   meta: Object,
   createdAt: { type: Date, default: Date.now }
 });
-delete mongoose.models.AnalyticsEvent;
-const AnalyticsEvent = mongoose.model("AnalyticsEvent", analyticsEventSchema);
+export const AnalyticsEvent = mongoose.models.AnalyticsEvent || mongoose.model("AnalyticsEvent", analyticsEventSchema);
 
-//
-// 10. Audit Log (sensitive actions)
-//
+// --- 10. Audit Log ---
 const auditLogSchema = new mongoose.Schema({
   actorUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   action: String,
@@ -188,24 +167,19 @@ const auditLogSchema = new mongoose.Schema({
   details: Object,
   createdAt: { type: Date, default: Date.now }
 });
-delete mongoose.models.AuditLog;
-const AuditLog = mongoose.model("AuditLog", auditLogSchema);
+export const AuditLog = mongoose.models.AuditLog || mongoose.model("AuditLog", auditLogSchema);
 
-//
-// Exports
-//
-module.exports = {
-  User,
-  CounselorProfile,
-  VolunteerProfile,
-  Appointment,
-  Message,
-  BotConversation,
-  LibraryArticle,
-  PeerPost,
-  PeerComment,
-  PeerReport,
-  AnalyticsEvent,
-  AuditLog,
-  QuizResult
-};
+const conversationSchema = new mongoose.Schema({
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }],
+}, { timestamps: true });
+
+// Ensure that any pair of participants is unique to prevent duplicate conversations
+conversationSchema.index({ participants: 1 }, { unique: true });
+
+export const Conversation = mongoose.models.Conversation || mongoose.model('Conversation', conversationSchema);
+
+// NOTE: The conflicting "module.exports" block at the end has been removed.

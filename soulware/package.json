@@ -10,7 +10,8 @@
     "seed": "node scripts/seed.js"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.31.10",
+    "@clerk/backend": "^2.14.0",
+    "@clerk/nextjs": "^6.32.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-slot": "^1.2.3",
