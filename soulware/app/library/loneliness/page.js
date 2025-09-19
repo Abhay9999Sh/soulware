@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const LonelinessPage = () => {
   const symptoms = [
@@ -168,6 +169,25 @@ const LonelinessPage = () => {
               Navigating social isolation, building meaningful connections, and creating 
               supportive relationships during your college journey.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Loneliness Educational Video */}
+      <section className="relative px-6 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <VideoPlayer
+              videoUrl="https://res.cloudinary.com/dhdvyrvh1/video/upload/v1758287245/Loneliness_kgg7to.mp4"
+              title="Overcoming Loneliness: Building Connections and Community"
+              description="Explore strategies for combating loneliness, building meaningful relationships, and creating supportive social networks in college and beyond."
+              className="mb-12"
+            />
           </motion.div>
         </div>
       </section>

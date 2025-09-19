@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import VideoPlayer from "@/components/VideoPlayer";
 
 const DepressionPage = () => {
   const symptoms = [
@@ -164,6 +165,25 @@ const DepressionPage = () => {
               A comprehensive guide to understanding depression, its causes, symptoms, 
               and evidence-based treatment approaches specifically for students.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Depression Educational Video */}
+      <section className="relative px-6 pb-16">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <VideoPlayer
+              videoUrl="https://res.cloudinary.com/dhdvyrvh1/video/upload/v1758287234/Depression_hlrvib.mp4"
+              title="Understanding Depression: Support and Recovery"
+              description="Learn about depression symptoms, treatment options, and practical strategies for managing depression while maintaining academic and personal well-being."
+              className="mb-12"
+            />
           </motion.div>
         </div>
       </section>
