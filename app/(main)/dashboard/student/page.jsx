@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 // NEW: Import the chatbot component
-import FloatingChatbot from "@/components/FloatingChatbot"; 
+// import FloatingChatbot from "@/components/FloatingChatbot"; 
 import { 
   Calendar, Clock, MessageCircle, BookOpen, Sparkles, User as UserIcon, Quote,
   MapPin, CheckCircle, Star, Heart, Zap, Shield, TrendingUp, Award
@@ -94,9 +94,11 @@ export default function StudentDashboard() {
           'Content-Type': 'application/json',
         },
       });
-
+      // console.log(response);
       if (response.ok) {
         const data = await response.json();
+        // console.log(data);
+        
         // Use quiz score if available
         if (data.score !== undefined && data.score !== null) {
           setWellnessScore(data.score);
@@ -504,8 +506,8 @@ export default function StudentDashboard() {
         </div>
       </div>
       
-      {/* The chatbot component is now rendered here from its own file */}
-      <FloatingChatbot isOpen={isChatbotOpen} setIsOpen={setIsChatbotOpen} />
+      {/* The chatbot component is now rendered here from its own file
+      <FloatingChatbot isOpen={isChatbotOpen} setIsOpen={setIsChatbotOpen} /> */}
     </div>
   );
 }

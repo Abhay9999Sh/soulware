@@ -364,3 +364,45 @@
     transform: none;
   }
 }
+
+
+/* Hide the default Google Translate dropdown */
+#google_translate_element {
+  display: none;
+}
+
+/* Hide the Google Translate banner at the top of the page */
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Remove the top margin added by the banner */
+body {
+  top: 0 !important;
+}
+/* --- HIDE GOOGLE TRANSLATE UI --- */
+
+/* Hide the top banner "Translated to: English" */
+.skiptranslate {
+  display: none !important;
+}
+
+/* Remove the top margin that the banner creates */
+body {
+  top: 0 !important;
+}
+
+/* Hide the "Original text" tooltip popup */
+.goog-tooltip {
+  display: none !important;
+}
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+/* Hide the highlight that appears on hover, which triggers the tooltip */
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}

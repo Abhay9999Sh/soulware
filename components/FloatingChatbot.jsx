@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect } from "react"; // Added useEffect and useRef
+import { useState, useRef, useEffect } from "react";
 import { Bot, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
@@ -9,16 +9,23 @@ import { useUser } from "@clerk/nextjs";
 export default function FloatingChatbot({ isOpen, setIsOpen }) {
   const { user } = useUser();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: `Hi ${user?.firstName || "there"}! 👋 I'm your AI wellness companion. How can I help you today?`,
-      sender: "bot",
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null); // Ref for auto-scrolling
+  const messagesEndRef = useRef(null);
 
+  // Add the initial greeting message only once when the chat opens
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      setMessages([
+        {
+          id: 1,
+          text: `Hi ${user?.firstName || "there"}! 👋 I'm your AI wellness companion. How can I help you today?`,
+          sender: "bot",
+        }
+      ]);
+    }
+  }, [isOpen, messages.length, user]);
+  
   // Auto-scroll to the latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,6 +42,7 @@ export default function FloatingChatbot({ isOpen, setIsOpen }) {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = message; // Store message before clearing
     setMessage("");
     setIsTyping(true);
 
@@ -45,7 +53,7 @@ export default function FloatingChatbot({ isOpen, setIsOpen }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage.text }),
+        body: JSON.stringify({ message: currentMessage }),
       });
 
       if (!response.ok) {
@@ -54,11 +62,10 @@ export default function FloatingChatbot({ isOpen, setIsOpen }) {
 
       const aiData = await response.json();
       
-      
       // Step 2: Create a new bot message with the AI's response
       const botMessage = {
         id: Date.now() + 1,
-        // Assuming the API returns a JSON like { "response": "..." }
+        // Use the 'reply' key from your API's JSON response
         text: aiData.reply || "Sorry, I couldn't process that. Please try again.",
         sender: "bot",
       };
@@ -156,7 +163,7 @@ export default function FloatingChatbot({ isOpen, setIsOpen }) {
               </main>
 
               <footer className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
+                <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="flex items-center gap-2">
                   <input
                     type="text"
                     value={message}
@@ -165,10 +172,10 @@ export default function FloatingChatbot({ isOpen, setIsOpen }) {
                     placeholder="Type a message..."
                     className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 border-transparent rounded-lg focus:ring-2 focus:ring-purple-500"
                   />
-                  <Button onClick={handleSendMessage} disabled={!message.trim() || isTyping} className="p-3" aria-label="Send Message">
+                  <Button type="submit" disabled={!message.trim() || isTyping} className="p-3" aria-label="Send Message">
                     <Send className="w-5 h-5" />
                   </Button>
-                </div>
+                </form>
                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                    AI responses are for support only. For emergencies, please seek professional help.
                  </p>
