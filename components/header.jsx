@@ -12,6 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   Menu,
   X,
@@ -114,6 +115,7 @@ const Header = () => {
               )}
             </SignedIn>
             <ThemeToggle />
+            <LanguageSwitcher />
             <SignedIn>
               
               {dbUser?.role && (
@@ -148,6 +150,7 @@ const Header = () => {
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center gap-3">
             <ThemeToggle />
+            <LanguageSwitcher />
             <button
               onClick={toggleMobileMenu}
               className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"

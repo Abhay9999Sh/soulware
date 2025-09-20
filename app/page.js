@@ -99,8 +99,7 @@ const Home = () => {
   const springY = useSpring(mousePosition.y, { stiffness: 150, damping: 20, mass: 0.5 });
   
   const { scrollY } = useScroll();
-  const heroTransform = useTransform(scrollY, [0, 500], [0, -100]);
-  const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+  // Removed heroTransform and heroOpacity to prevent hero section from fading on scroll
   const parallaxY1 = useTransform(scrollY, [0, 1000], [0, -200]);
   const parallaxY2 = useTransform(scrollY, [0, 1000], [0, -400]);
   
@@ -309,7 +308,6 @@ const Home = () => {
 
         <motion.div
           className="relative z-10 text-center px-6 max-w-7xl mx-auto"
-          style={{ y: heroTransform, opacity: heroOpacity }}
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}

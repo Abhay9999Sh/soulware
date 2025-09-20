@@ -406,3 +406,27 @@ body {
   box-shadow: none !important;
   border: none !important;
 }
+
+/* --- PREVENT TRANSLATION OF LANGUAGE SWITCHER --- */
+.notranslate {
+  translate: no !important;
+}
+
+/* Ensure language dropdown elements are never translated */
+.notranslate * {
+  translate: no !important;
+}
+
+/* Alternative method to prevent translation */
+[translate="no"] {
+  translate: no !important;
+}
+
+/* Force Google Translate to ignore these elements */
+.notranslate, 
+.notranslate *,
+[class*="language"],
+[class*="Language"] {
+  -webkit-transform: none !important;
+  transform: none !important;
+}
