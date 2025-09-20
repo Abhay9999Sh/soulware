@@ -1,31 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+// NEW: Import the chatbot component
+import FloatingChatbot from "@/components/FloatingChatbot"; 
 import { 
-  Calendar, 
-  Clock, 
-  MessageCircle, 
-  BookOpen,
-  Sparkles,
-  User as UserIcon,
-  Quote,
-  MapPin,
-  CheckCircle
+  Calendar, Clock, MessageCircle, BookOpen, Sparkles, User as UserIcon, Quote,
+  MapPin, CheckCircle
 } from "lucide-react";
 
-// --- A list of motivational quotes ---
 const motivationalQuotes = [
   { text: "Your feelings are valid. You have a right to feel whatever you feel.", author: "Unknown" },
   { text: "It's okay to not be okay. It's okay to ask for help.", author: "Unknown" },
-  { text: "Healing is not linear. Be patient with your own journey.", author: "Yung Pueblo" },
-  { text: "You don't have to control your thoughts. You just have to stop letting them control you.", author: "Dan Millman" },
-  { text: "The bravest thing I ever did was continuing my life when I wanted to die.", author: "Juliette Lewis" },
-  { text: "What mental health needs is more sunlight, more candor, and more unashamed conversation.", author: "Glenn Close" },
-  { text: "Your present circumstances don't determine where you can go; they merely determine where you start.", author: "Nido Qubein" }
+  { text: "Control your mind, dont get controlled by it", author: "Vansh"}
 ];
 
 export default function StudentDashboard() {
@@ -34,11 +24,12 @@ export default function StudentDashboard() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quote, setQuote] = useState({ text: '', author: '' });
+  // State to control the chatbot is kept here
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchBookings();
-      // Select a random quote when the component loads
       setQuote(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
     }
   }, [user]);
@@ -48,7 +39,6 @@ export default function StudentDashboard() {
       const response = await fetch(`/api/bookings`);
       if (response.ok) {
         const data = await response.json();
-        // Filter for only offline, upcoming sessions
         const upcomingOfflineBookings = data.filter(b => 
             b.mode === 'offline' && 
             (b.status === 'pending' || b.status === 'confirmed')
@@ -77,13 +67,11 @@ export default function StudentDashboard() {
 
           {/* Left Sidebar: Profile & Actions */}
           <aside className="lg:col-span-1 space-y-8">
-            {/* Student Details Card */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md flex flex-col items-center text-center"
             >
-              {/* Always show a generic avatar for anonymity */}
               <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 mb-4 flex items-center justify-center">
                  <UserIcon size={48} className="text-gray-500 dark:text-gray-400" />
               </div>
@@ -91,7 +79,6 @@ export default function StudentDashboard() {
               <p className="text-sm text-gray-500 dark:text-gray-400">{user?.primaryEmailAddress.emailAddress}</p>
             </motion.div>
 
-            {/* Motivational Quote Card */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -103,7 +90,6 @@ export default function StudentDashboard() {
               <p className="text-right text-gray-500 dark:text-gray-400 font-medium mt-3">- {quote.author}</p>
             </motion.div>
 
-            {/* Action Cards */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -119,9 +105,9 @@ export default function StudentDashboard() {
               />
               <ActionCard 
                 icon={Sparkles} 
-                title="AI Chatbot 'Heath'" 
+                title="Your AI Help" 
                 description="Get instant AI-powered support"
-                onClick={() => router.push('/ai-chat')}
+                onClick={() => setIsChatbotOpen(true)}
                 color="purple"
               />
               <ActionCard 
@@ -164,17 +150,21 @@ export default function StudentDashboard() {
 
         </div>
       </div>
+      
+      {/* The chatbot component is now rendered here from its own file */}
+      <FloatingChatbot isOpen={isChatbotOpen} setIsOpen={setIsChatbotOpen} />
     </div>
   );
 }
 
-// Helper component for action cards
+// --- Helper Components ---
+
 const ActionCard = ({ icon: Icon, title, description, onClick, color }) => {
   const colors = {
     blue: "bg-blue-600 hover:bg-blue-700",
     purple: "bg-purple-600 hover:bg-purple-700",
     green: "bg-green-600 hover:bg-green-700",
-  }
+  };
   return (
     <button 
       onClick={onClick}
@@ -186,10 +176,9 @@ const ActionCard = ({ icon: Icon, title, description, onClick, color }) => {
         <p className="text-sm opacity-90">{description}</p>
       </div>
     </button>
-  )
-}
+  );
+};
 
-// Helper function and component for displaying a booking
 const getStatusInfo = (status) => {
     switch (status) {
       case "confirmed":
@@ -243,4 +232,4 @@ const BookingCard = ({ booking }) => {
         </div>
       </motion.div>
     );
-}
+};
