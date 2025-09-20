@@ -81,11 +81,22 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
     const messagesEndRef = useRef(null);
     const router = useRouter();
 
+    // Guard clause: Don't render if user is not available
+    if (!user || !conversation) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <p className="text-gray-500 dark:text-gray-400">Loading chat...</p>
+                </div>
+            </div>
+        );
+    }
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
     
-    const otherUser = conversation.participants.find(p => p.clerkId !== user.id);
+    const otherUser = conversation.participants?.find(p => p.clerkId !== user.id);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -152,9 +163,9 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: -20, scale: 0.95 }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className={`flex items-end gap-3 ${msg.senderId.clerkId === user.id ? 'justify-end' : 'justify-start'}`}
+                            className={`flex items-end gap-3 ${msg.senderId?.clerkId === user?.id ? 'justify-end' : 'justify-start'}`}
                         >
-                            {msg.senderId.clerkId !== user.id && (
+                            {msg.senderId?.clerkId !== user?.id && (
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                                     {otherUser?.profile?.displayName?.charAt(0) || "👩‍⚕️"}
                                 </div>
@@ -162,7 +173,7 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
                             <div className="max-w-xs md:max-w-md">
                                 <div
                                     className={`px-4 py-3 rounded-2xl relative ${
-                                        msg.senderId.clerkId === user.id
+                                        msg.senderId?.clerkId === user?.id
                                             ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-br-none'
                                             : 'glass text-gray-800 dark:text-white border border-white/20 rounded-bl-none'
                                     }`}
@@ -170,14 +181,14 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
                                     <p className="text-sm leading-relaxed">{msg.text}</p>
                                     <div className="flex items-center justify-between mt-2">
                                         <p className={`text-xs ${
-                                            msg.senderId.clerkId === user.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                                            msg.senderId?.clerkId === user?.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                                         }`}>
                                             {new Date().toLocaleTimeString([], {
                                                 hour: '2-digit',
                                                 minute: '2-digit'
                                             })}
                                         </p>
-                                        {msg.senderId.clerkId === user.id && (
+                                        {msg.senderId?.clerkId === user?.id && (
                                             <CheckCircle className="w-3 h-3 text-blue-200" />
                                         )}
                                     </div>
@@ -310,7 +321,7 @@ export default function ChatLayoutPage({ params }) {
     }, [user, conversationId]);
 
     const handleSendMessage = async (text) => {
-        if (!text.trim() || !user) return;
+        if (!text.trim() || !user?.id) return;
         const optimisticMessage = { _id: Date.now().toString(), text, senderId: { clerkId: user.id } };
         setMessages((prev) => [...prev, optimisticMessage]);
 

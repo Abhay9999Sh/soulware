@@ -1,66 +1,25 @@
 "use client";
 import React, { useState, useEffect } from "react";
-// import { useUser } from "@clerk/nextjs"; // This line is removed to resolve the error
+import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
+import { AlertTriangle, CheckCircle, Loader, X, Trash, Award, Users, TrendingUp, Shield, Star, Eye, ThumbsUp, MessageCircle, Calendar, Bell } from "lucide-react";
 
-// --- MOCK useUser hook to remove external dependency ---
-// In a real application, you would import this from "@clerk/nextjs"
-const useUser = () => {
-  return {
-    isLoaded: true,
-    isSignedIn: true,
-    user: {
-      id: 'user_mock_12345',
-      fullName: 'Valiant Volunteer',
-      firstName: 'Valiant',
-    },
-  };
-};
-
-// --- SVG Icon Components (to remove external dependency) ---
-const IconAlertTriangle = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-    <line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
-  </svg>
-);
-const IconCheckCircle = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-  </svg>
-);
-const IconLoader = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line>
-    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-    <line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line>
-    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-  </svg>
-);
-const IconX = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
-);
-const IconTrash = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
-    </svg>
-);
-const IconAward = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline>
-    </svg>
-);
-
-const StatCard = ({ icon: Icon, title, value, color }) => (
-  <div className={`p-6 rounded-2xl shadow-lg bg-gradient-to-br ${color} text-white`}>
-    <div className="flex items-center gap-3 mb-4">
-      <Icon className="text-3xl opacity-90" />
-      <h3 className="text-lg font-semibold">{title}</h3>
+const StatCard = ({ icon: Icon, title, value, color, description }) => (
+  <motion.div 
+    whileHover={{ scale: 1.02, y: -2 }}
+    className={`bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/20 ${color}`}
+  >
+    <div className="flex items-center gap-4 mb-4">
+      <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+        <Icon className="w-6 h-6 text-white" />
+      </div>
+      <div>
+        <h3 className="text-lg font-bold text-white">{title}</h3>
+        <p className="text-sm text-white/80">{description}</p>
+      </div>
     </div>
-    <p className="text-4xl font-bold">{value}</p>
-  </div>
+    <p className="text-3xl font-black text-white">{value}</p>
+  </motion.div>
 );
 
 export default function VolunteerDashboard() {
@@ -130,108 +89,349 @@ export default function VolunteerDashboard() {
   };
 
   const handleNominatePost = async (postId) => {
-      await fetch(`/api/community/posts/${postId}/nominate`, { method: 'PATCH' });
-      // Remove the post from the local list to give feedback
-      setPositivePosts(prev => prev.filter(post => post._id !== postId));
+      try {
+          const response = await fetch(`/api/community/posts/${postId}/nominate`, { 
+              method: 'PATCH',
+              headers: {
+                  'Content-Type': 'application/json',
+              }
+          });
+          
+          if (response.ok) {
+              // Remove the post from the local list immediately for better UX
+              setPositivePosts(prev => prev.filter(post => post._id !== postId));
+              
+              // Optionally refresh the data to ensure consistency
+              setTimeout(() => {
+                  fetchData();
+              }, 1000);
+          } else {
+              console.error('Failed to nominate post');
+          }
+      } catch (error) {
+          console.error('Error nominating post:', error);
+      }
   };
 
-  return (
-    <div className="p-6 space-y-10">
-      <motion.section initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-3">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Volunteer Dashboard 💛</h1>
-        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">Help curate the best of our community and keep it safe, {user?.firstName || "Volunteer"}!</p>
-      </motion.section>
-
-      {/* View Toggle */}
-      <div className="flex justify-center bg-gray-100 dark:bg-gray-800 p-1 rounded-full w-fit mx-auto">
-          <button onClick={() => setView('curation')} className={`px-6 py-2 rounded-full text-sm font-semibold transition-colors ${view === 'curation' ? 'bg-white dark:bg-gray-700 shadow text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
-              Community Curation
-          </button>
-          <button onClick={() => setView('moderation')} className={`px-6 py-2 rounded-full text-sm font-semibold relative transition-colors ${view === 'moderation' ? 'bg-white dark:bg-gray-700 shadow text-gray-800 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
-              Moderation Queue
-              {reports.length > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-gray-100 dark:border-gray-800"></span>}
-          </button>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-slate-900 dark:via-purple-900 dark:to-pink-900 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20 dark:border-gray-700/20 text-center"
+        >
+          <Loader className="animate-spin w-8 h-8 mx-auto mb-4 text-purple-600" />
+          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading Volunteer Dashboard...</p>
+        </motion.div>
       </div>
-      
-      {loading ? <div className="flex justify-center items-center h-48"><IconLoader className="animate-spin text-4xl text-blue-600" /></div> : (
-        <AnimatePresence mode="wait">
-            <motion.div key={view} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-                {view === 'curation' ? (
-                    <section id="curation-view" className="space-y-6">
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white text-center flex items-center justify-center gap-3"><IconAward className="text-amber-500" /> Nominate a Post for Highlight</h2>
-                        {positivePosts.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {positivePosts.map(post => (
-                                    <div key={post._id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow border border-transparent hover:border-green-500 transition-all">
-                                        <p className="font-semibold text-gray-800 dark:text-white">{post.title}</p>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-3">{post.body.substring(0, 100)}...</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs font-bold text-gray-500">{post.upvotes.length} Upvotes</span>
-                                            <button onClick={() => handleNominatePost(post._id)} className="px-3 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 text-xs font-semibold">Nominate</button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-6 text-center bg-gray-50 dark:bg-gray-800/50 rounded-xl"><IconCheckCircle className="mx-auto text-4xl text-green-500 mb-2" /><p className="text-gray-600 dark:text-gray-300">No new positive posts to nominate right now.</p></div>
-                        )}
-                    </section>
-                ) : (
-                    <section id="moderation-view" className="space-y-6">
-                        <StatCard icon={IconAlertTriangle} title="Pending Reports to Review" value={reports.length} color="from-yellow-500 to-orange-500" />
-                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow overflow-hidden">
-                            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                                <h2 className="text-xl font-bold flex items-center"><IconAlertTriangle className="mr-2 text-yellow-500" /> Content Review Queue</h2>
-                            </div>
-                            {reports.length > 0 ? (
-                                <ul className="divide-y divide-gray-200 dark:divide-gray-700">{reports.map(report => (
-                                    <li key={report._id} className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                                        <div className="mb-2 sm:mb-0">
-                                            <span className="font-semibold capitalize">{report.targetType}</span> reported for: <p className="text-gray-700 dark:text-gray-300 italic">"{report.reason}"</p>
-                                        </div>
-                                        <div className="flex gap-2 flex-shrink-0">
-                                             <button onClick={() => handleReview(report)} className="px-3 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 text-xs font-semibold">Review</button>
-                                        </div>
-                                    </li>
-                                ))}</ul>
-                            ) : (
-                                <div className="p-6 text-center"><IconCheckCircle className="mx-auto text-4xl text-green-500 mb-2" /><p>The moderation queue is clear. Great work!</p></div>
-                            )}
-                        </div>
-                    </section>
-                )}
-            </motion.div>
-        </AnimatePresence>
-      )}
+    );
+  }
 
-      {/* Review Modal */}
-      <AnimatePresence>
-        {isReviewModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4" onClick={closeReviewModal}>
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl p-6">
-                <div className="flex justify-between items-center border-b pb-3 mb-4">
-                    <h2 className="text-xl font-bold">Review Reported Content</h2>
-                    <button onClick={closeReviewModal} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><IconX /></button>
-                </div>
-                {reportedContent ? (
-                    <div>
-                        <div className="mb-4 p-4 bg-yellow-50 dark:bg-gray-700/50 rounded-lg">
-                            <p><strong className="font-semibold">Reason:</strong> {selectedReport.reason}</p>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-slate-900 dark:via-purple-900 dark:to-pink-900 transition-all duration-1000">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-8"
+        >
+          <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20 dark:border-gray-700/20">
+            <div className="text-center mb-6">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent mb-4">
+                Volunteer Dashboard 💛
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                Help curate the best of our community and keep it safe, {user?.firstName || "Volunteer"}! 🌟
+              </p>
+            </div>
+            
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              <StatCard 
+                icon={Award} 
+                title="Posts to Review" 
+                value={positivePosts.length} 
+                color="bg-gradient-to-r from-yellow-500 to-orange-500"
+                description="Ready for nomination"
+              />
+              <StatCard 
+                icon={Shield} 
+                title="Reports Pending" 
+                value={reports.length} 
+                color="bg-gradient-to-r from-red-500 to-pink-500"
+                description="Moderation queue"
+              />
+              <StatCard 
+                icon={Users} 
+                title="Community Impact" 
+                value="High" 
+                color="bg-gradient-to-r from-green-500 to-teal-500"
+                description="Your contribution"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Navigation Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl p-2 shadow-xl border border-white/20 dark:border-gray-700/20 mb-8"
+        >
+          <div className="flex flex-wrap gap-2">
+            <motion.button
+              onClick={() => setView('curation')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`flex items-center gap-3 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${
+                view === 'curation'
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-800/50'
+              }`}
+            >
+              <Award size={20} />
+              <span className="hidden sm:inline">Community Curation</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                view === 'curation' ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}>
+                {positivePosts.length}
+              </span>
+            </motion.button>
+            
+            <motion.button
+              onClick={() => setView('moderation')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`flex items-center gap-3 py-3 px-6 rounded-xl font-medium transition-all duration-300 relative ${
+                view === 'moderation'
+                  ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-800/50'
+              }`}
+            >
+              <Shield size={20} />
+              <span className="hidden sm:inline">Moderation Queue</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                view === 'moderation' ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+              }`}>
+                {reports.length}
+              </span>
+              {reports.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
+              )}
+            </motion.button>
+          </div>
+        </motion.div>
+        {/* Content Sections */}
+        <AnimatePresence mode="wait">
+          {view === 'curation' && (
+            <motion.div
+              key="curation"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/20">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+                  <Award className="w-6 h-6 text-yellow-600" />
+                  Nominate Posts for Highlight
+                </h2>
+                {positivePosts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {positivePosts.map((post, index) => (
+                      <motion.div
+                        key={post._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border border-transparent hover:border-yellow-400"
+                      >
+                        <div className="flex items-start gap-3 mb-4">
+                          <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center font-bold text-white shadow-lg">
+                            {post.author?.charAt(0) || 'U'}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">{post.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">
+                              {post.body.substring(0, 120)}...
+                            </p>
+                          </div>
                         </div>
-                        <div className="mb-6 p-4 border rounded-lg">
-                            <h4 className="font-semibold text-lg mb-2">{reportedContent?.title}</h4>
-                            <p className="text-gray-600 dark:text-gray-300">{reportedContent?.body}</p>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <ThumbsUp className="w-4 h-4" />
+                              {post.upvotes?.length || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="w-4 h-4" />
+                              {post.comments?.length || 0}
+                            </span>
+                          </div>
+                          <motion.button
+                            onClick={() => handleNominatePost(post._id)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full hover:from-yellow-600 hover:to-orange-600 text-sm font-bold shadow-lg flex items-center gap-2"
+                          >
+                            <Star className="w-4 h-4" />
+                            Nominate
+                          </motion.button>
                         </div>
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => handleDismissReport(selectedReport._id)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 rounded-lg">Dismiss Report</button>
-                            <button onClick={() => handleDeletePost(selectedReport.targetId)} className="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center gap-2"><IconTrash className="w-4 h-4" /> Delete Post</button>
-                        </div>
-                    </div>
-                ) : ( <div className="flex justify-center items-center h-48"><IconLoader className="animate-spin text-3xl" /></div> )}
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">No posts ready for nomination</p>
+                    <p className="text-gray-400 text-sm">Great posts will appear here for you to highlight</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+
+          {view === 'moderation' && (
+            <motion.div
+              key="moderation"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/20">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+                  <Shield className="w-6 h-6 text-red-600" />
+                  Content Review Queue
+                </h2>
+                {reports.length > 0 ? (
+                  <div className="space-y-4">
+                    {reports.map((report, index) => (
+                      <motion.div
+                        key={report._id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-xl p-6 hover:shadow-lg transition-all duration-300"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center font-bold text-white shadow-lg">
+                              <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-lg text-gray-800 dark:text-white capitalize">
+                                {report.targetType} Report
+                              </p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                                "{report.reason}"
+                              </p>
+                            </div>
+                          </div>
+                          <motion.button
+                            onClick={() => handleReview(report)}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full hover:from-blue-600 hover:to-purple-600 text-sm font-bold shadow-lg flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Review
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">Moderation queue is clear!</p>
+                    <p className="text-gray-400 text-sm">Great work keeping the community safe</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Review Modal */}
+        <AnimatePresence>
+          {isReviewModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" 
+              onClick={closeReviewModal}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }} 
+                animate={{ scale: 1, opacity: 1 }} 
+                exit={{ scale: 0.9, opacity: 0 }} 
+                onClick={(e) => e.stopPropagation()} 
+                className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl p-6 border border-white/20 dark:border-gray-700/20"
+              >
+                <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Review Reported Content</h2>
+                  <motion.button 
+                    onClick={closeReviewModal} 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
+                
+                {reportedContent ? (
+                  <div className="space-y-6">
+                    <div className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-xl p-4 border-l-4 border-yellow-500">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Report Reason:</p>
+                      <p className="font-semibold text-gray-800 dark:text-white">"{selectedReport.reason}"</p>
+                    </div>
+                    
+                    <div className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-xl p-6">
+                      <h4 className="font-bold text-xl mb-3 text-gray-800 dark:text-white">{reportedContent?.title}</h4>
+                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{reportedContent?.body}</p>
+                    </div>
+                    
+                    <div className="flex justify-end gap-3">
+                      <motion.button 
+                        onClick={() => handleDismissReport(selectedReport._id)} 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-6 py-3 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                      >
+                        Dismiss Report
+                      </motion.button>
+                      <motion.button 
+                        onClick={() => handleDeletePost(selectedReport.targetId)} 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium hover:from-red-600 hover:to-pink-600 transition-all shadow-lg flex items-center gap-2"
+                      >
+                        <Trash className="w-4 h-4" />
+                        Delete Post
+                      </motion.button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center items-center h-48">
+                    <Loader className="animate-spin w-8 h-8 text-purple-600" />
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
