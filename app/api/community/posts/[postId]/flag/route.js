@@ -1,0 +1,11 @@
+import { NextResponse } from "next/server";
+import { PeerPost } from "@/lib/models";
+import dbConnect from "@/lib/mongoose"; // Import the new connector
+
+export async function POST(req, { params }) {
+  await dbConnect(); // Use the efficient connection
+  const post = await PeerPost.findById(params.postId);
+  post.flaggedByVolunteer = true;
+  await post.save();
+  return NextResponse.json(post);
+}
