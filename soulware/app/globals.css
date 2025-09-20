@@ -364,3 +364,17 @@
     transform: none;
   }
 }
+/* Hide the default Google Translate dropdown */
+#google_translate_element {
+  display: none;
+}
+
+/* Hide the Google Translate banner at the top of the page */
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Remove the top margin added by the banner */
+body {
+  top: 0 !important;
+}

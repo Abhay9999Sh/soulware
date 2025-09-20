@@ -1,9 +1,11 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Script from 'next/script';
 import Header from "@/components/header";
 import PageTransition from "@/components/page-transition";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,9 +26,27 @@ export default function RootLayout({ children }) {
             className={`${inter.variable} antialiased`}
           >
             <Header />
+            <div className="p-4 flex justify-end">
+              <LanguageSwitcher />
+            </div>
             <PageTransition>
               {children}
             </PageTransition>
+            <Script
+          id="google-translate-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              function googleTranslateElementInit() {
+                new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+              }
+            `,
+          }}
+        />
+        <Script
+          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          strategy="afterInteractive"
+        />
           </body>
         </html>
       </ThemeProvider>
