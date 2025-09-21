@@ -60,7 +60,7 @@ const ConversationSidebar = ({ conversations, activeConversationId }) => (
                                     </motion.div>
                                     <div className="flex-1 overflow-hidden">
                                         <p className="font-bold text-gray-900 dark:text-white truncate">
-                                            {otherUser?.profile?.displayName || 'Counselor'}
+                                            Student
                                         </p>
                                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                             {convo.lastMessage || 'Start a conversation'}
@@ -142,7 +142,7 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
                             </motion.div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                                    {otherUser?.profile?.displayName || 'Counselor'}
+                                    Student
                                 </h2>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                     Professional Counselor
