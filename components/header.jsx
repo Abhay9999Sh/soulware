@@ -136,7 +136,7 @@ const Header = () => {
               />
             </SignedIn>
             <SignedOut>
-              <SignInButton>
+              <SignInButton mode="modal">
                 <Button
                   variant="outline"
                   className="border-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white rounded-xl px-4 py-2 transition-all duration-300"
@@ -289,7 +289,7 @@ const Header = () => {
                 {/* Sign In Button (if signed out) */}
                 <SignedOut>
                   <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-                    <SignInButton>
+                    <SignInButton mode="modal">
                       <Button
                         variant="outline"
                         className="w-full border-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white rounded-xl py-3 transition-all duration-300"
