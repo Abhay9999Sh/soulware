@@ -391,7 +391,7 @@ export default function VolunteerDashboard() {
                 animate={{ scale: 1, opacity: 1 }} 
                 exit={{ scale: 0.9, opacity: 0 }} 
                 onClick={(e) => e.stopPropagation()} 
-                className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl p-6 border border-white/20 dark:border-gray-700/20"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl p-6 border border-gray-200 dark:border-gray-700"
               >
                 <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Review Reported Content</h2>
@@ -407,14 +407,14 @@ export default function VolunteerDashboard() {
                 
                 {reportedContent ? (
                   <div className="space-y-6">
-                    <div className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-xl p-4 border-l-4 border-yellow-500">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Report Reason:</p>
-                      <p className="font-semibold text-gray-800 dark:text-white">"{selectedReport.reason}"</p>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-4 border-l-4 border-yellow-500">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-1">Report Reason:</p>
+                      <p className="font-semibold text-yellow-900 dark:text-yellow-100">"{selectedReport.reason}"</p>
                     </div>
                     
-                    <div className="bg-white/5 dark:bg-gray-800/10 backdrop-blur-sm rounded-xl p-6">
-                      <h4 className="font-bold text-xl mb-3 text-gray-800 dark:text-white">{reportedContent?.title}</h4>
-                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{reportedContent?.body}</p>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+                      <h4 className="font-bold text-xl mb-3 text-gray-900 dark:text-white">{reportedContent?.title}</h4>
+                      <p className="text-gray-700 dark:text-gray-200 leading-relaxed">{reportedContent?.body}</p>
                     </div>
                     
                     <div className="flex justify-end gap-3">
@@ -422,7 +422,7 @@ export default function VolunteerDashboard() {
                         onClick={() => handleDismissReport(selectedReport._id)} 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-6 py-3 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                        className="px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white rounded-xl font-medium hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors shadow-md"
                       >
                         Dismiss Report
                       </motion.button>
@@ -430,7 +430,7 @@ export default function VolunteerDashboard() {
                         onClick={() => handleDeletePost(selectedReport.targetId)} 
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium hover:from-red-600 hover:to-pink-600 transition-all shadow-lg flex items-center gap-2"
+                        className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all shadow-lg flex items-center gap-2"
                       >
                         <Trash className="w-4 h-4" />
                         Delete Post
