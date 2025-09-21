@@ -1,19 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { 
-  Brain, 
-  ArrowLeft, 
-  BookOpen, 
-  Clock, 
-  CheckCircle, 
+import {
+  Brain,
+  ArrowLeft,
+  BookOpen,
+  Clock,
+  CheckCircle,
   AlertTriangle,
   Heart,
   Users,
   Lightbulb,
   Shield,
   Target,
-  Star
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -28,7 +28,7 @@ const DepressionPage = () => {
     "Fatigue or loss of energy",
     "Feelings of worthlessness or guilt",
     "Difficulty concentrating or making decisions",
-    "Recurrent thoughts of death or suicide"
+    "Recurrent thoughts of death or suicide",
   ];
 
   const causes = [
@@ -39,7 +39,7 @@ const DepressionPage = () => {
     "Substance use or abuse",
     "Chronic illness or pain",
     "Traumatic life events",
-    "Seasonal changes (Seasonal Affective Disorder)"
+    "Seasonal changes (Seasonal Affective Disorder)",
   ];
 
   const copingStrategies = [
@@ -47,38 +47,39 @@ const DepressionPage = () => {
       title: "Professional Help",
       description: "Seek therapy, counseling, or psychiatric care",
       icon: Users,
-      priority: "high"
+      priority: "high",
     },
     {
       title: "Medication",
-      description: "Consider antidepressant medication under medical supervision",
+      description:
+        "Consider antidepressant medication under medical supervision",
       icon: Shield,
-      priority: "high"
+      priority: "high",
     },
     {
       title: "Regular Exercise",
       description: "Engage in physical activity to boost mood and energy",
       icon: Target,
-      priority: "medium"
+      priority: "medium",
     },
     {
       title: "Healthy Sleep",
       description: "Maintain consistent sleep schedule and good sleep hygiene",
       icon: Clock,
-      priority: "medium"
+      priority: "medium",
     },
     {
       title: "Social Support",
       description: "Connect with friends, family, or support groups",
       icon: Heart,
-      priority: "high"
+      priority: "high",
     },
     {
       title: "Mindfulness",
       description: "Practice meditation, deep breathing, or yoga",
       icon: Lightbulb,
-      priority: "medium"
-    }
+      priority: "medium",
+    },
   ];
 
   const warningSigns = [
@@ -91,7 +92,7 @@ const DepressionPage = () => {
     "Sleeping too little or too much",
     "Withdrawing or feeling isolated",
     "Showing rage or talking about seeking revenge",
-    "Extreme mood swings"
+    "Extreme mood swings",
   ];
 
   return (
@@ -107,7 +108,7 @@ const DepressionPage = () => {
           transition={{
             duration: 8,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         />
         <motion.div
@@ -119,7 +120,7 @@ const DepressionPage = () => {
           transition={{
             duration: 10,
             repeat: Infinity,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
         />
       </div>
@@ -153,17 +154,18 @@ const DepressionPage = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-8">
               <Brain className="w-10 h-10 text-blue-600" />
             </div>
-            
+
             <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6">
               Understanding{" "}
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Depression
               </span>
             </h1>
-            
+
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              A comprehensive guide to understanding depression, its causes, symptoms, 
-              and evidence-based treatment approaches specifically for students.
+              A comprehensive guide to understanding depression, its causes,
+              symptoms, and evidence-based treatment approaches specifically for
+              students.
             </p>
           </motion.div>
         </div>
@@ -203,18 +205,25 @@ const DepressionPage = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed">
               <p className="mb-6">
-                Depression is a common but serious mood disorder that affects how you feel, think, and handle daily activities. 
-                It&apos;s more than just feeling sad or going through a rough patch. Depression is a persistent condition that can 
-                significantly impact your academic performance, relationships, and overall quality of life.
+                Depression is a common but serious mood disorder that affects
+                how you feel, think, and handle daily activities. It&apos;s more
+                than just feeling sad or going through a rough patch. Depression
+                is a persistent condition that can significantly impact your
+                academic performance, relationships, and overall quality of
+                life.
               </p>
               <p className="mb-6">
-                For college students, depression can be particularly challenging as it often coincides with major life transitions, 
-                academic pressure, and the stress of building new relationships and independence. It&apos;s important to understand 
-                that depression is not a sign of weakness or something you can simply &quot;snap out of.&quot;
+                For college students, depression can be particularly challenging
+                as it often coincides with major life transitions, academic
+                pressure, and the stress of building new relationships and
+                independence. It&apos;s important to understand that depression
+                is not a sign of weakness or something you can simply &quot;snap
+                out of.&quot;
               </p>
               <p>
-                The good news is that depression is highly treatable, and with the right support and treatment, most people 
-                can recover and lead fulfilling lives.
+                The good news is that depression is highly treatable, and with
+                the right support and treatment, most people can recover and
+                lead fulfilling lives.
               </p>
             </div>
           </motion.div>
@@ -235,7 +244,8 @@ const DepressionPage = () => {
               Common Symptoms
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              Depression can manifest in many ways. Here are the most common symptoms to be aware of:
+              Depression can manifest in many ways. Here are the most common
+              symptoms to be aware of:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {symptoms.map((symptom, index) => (
@@ -270,7 +280,8 @@ const DepressionPage = () => {
               Causes and Contributing Factors
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              Depression rarely has a single cause. It&apos;s typically the result of a combination of factors:
+              Depression rarely has a single cause. It&apos;s typically the
+              result of a combination of factors:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {causes.map((cause, index) => (
@@ -305,16 +316,17 @@ const DepressionPage = () => {
               Coping Strategies and Solutions
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              There are many effective ways to manage depression. Here are evidence-based strategies:
+              There are many effective ways to manage depression. Here are
+              evidence-based strategies:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {copingStrategies.map((strategy, index) => (
                 <motion.div
                   key={index}
                   className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
-                    strategy.priority === 'high' 
-                      ? 'border-red-200 bg-red-50' 
-                      : 'border-blue-200 bg-blue-50'
+                    strategy.priority === "high"
+                      ? "border-red-200 bg-red-50"
+                      : "border-blue-200 bg-blue-50"
                   }`}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -323,17 +335,19 @@ const DepressionPage = () => {
                   whileHover={{ scale: 1.02 }}
                 >
                   <div className="flex items-start">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 ${
-                      strategy.priority === 'high' 
-                        ? 'bg-red-100 text-red-600' 
-                        : 'bg-blue-100 text-blue-600'
-                    }`}>
+                    <div
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center mr-4 ${
+                        strategy.priority === "high"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-blue-100 text-blue-600"
+                      }`}
+                    >
                       <strategy.icon className="w-6 h-6" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         {strategy.title}
-                        {strategy.priority === 'high' && (
+                        {strategy.priority === "high" && (
                           <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
                             High Priority
                           </span>
@@ -366,8 +380,8 @@ const DepressionPage = () => {
               </h2>
             </div>
             <p className="text-lg text-gray-600 mb-8">
-              If you or someone you know is experiencing any of these warning signs, 
-              it&apos;s crucial to seek professional help immediately:
+              If you or someone you know is experiencing any of these warning
+              signs, it&apos;s crucial to seek professional help immediately:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               {warningSigns.map((sign, index) => (
@@ -390,13 +404,14 @@ const DepressionPage = () => {
               </h3>
               <div className="space-y-3">
                 <p className="text-gray-700">
-                  <strong>National Suicide Prevention Lifeline:</strong> 988
+                  <strong>National Mental Health Helpline (KIRAN):</strong> 1800
+                  599 0019
                 </p>
                 <p className="text-gray-700">
-                  <strong>Crisis Text Line:</strong> Text HOME to 741741
+                  <strong>Vandrevala Foundation Helpline:</strong> 1860 266 2345
                 </p>
                 <p className="text-gray-700">
-                  <strong>Emergency Services:</strong> 911
+                  <strong>Emergency Services:</strong> 112
                 </p>
               </div>
             </div>
@@ -418,8 +433,8 @@ const DepressionPage = () => {
               You&apos;re Not Alone
             </h2>
             <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-              Remember, seeking help is a sign of strength, not weakness. 
-              Our community and professional resources are here to support you.
+              Remember, seeking help is a sign of strength, not weakness. Our
+              community and professional resources are here to support you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
