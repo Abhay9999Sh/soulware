@@ -7,7 +7,8 @@ export async function DELETE(req, { params }) {
   await dbConnect();
   
   try {
-    const deletedReport = await PeerReport.findByIdAndDelete(params.reportId);
+    const { reportId } = await params; // Await params in Next.js 15
+    const deletedReport = await PeerReport.findByIdAndDelete(reportId);
 
     if (!deletedReport) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });

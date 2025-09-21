@@ -6,6 +6,7 @@ import { Send, Loader, User as UserIcon, ArrowLeft, MessageCircle, Clock, CheckC
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useRealtimeSocket } from '@/hooks/userealtime';
 
 // --- Sub-components for the new layout ---
 
@@ -76,10 +77,12 @@ const ConversationSidebar = ({ conversations, activeConversationId }) => (
     </motion.aside>
 );
 
-const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
+const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typing }) => {
     const [newMessage, setNewMessage] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
     const router = useRouter();
+    const typingTimeoutRef = useRef(null);
 
     // Guard clause: Don't render if user is not available
     if (!user || !conversation) {
@@ -98,9 +101,39 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
     
     const otherUser = conversation.participants?.find(p => p.clerkId !== user.id);
 
+    const handleInputChange = (e) => {
+        setNewMessage(e.target.value);
+        
+        // Handle typing indicators
+        if (socket && !isTyping) {
+            setIsTyping(true);
+            socket.emit("typing", conversation._id);
+        }
+        
+        // Clear previous timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Set new timeout to stop typing
+        typingTimeoutRef.current = setTimeout(() => {
+            if (socket) {
+                socket.emit("stop typing", conversation._id);
+                setIsTyping(false);
+            }
+        }, 1000);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
+        
+        // Stop typing when sending message
+        if (socket && isTyping) {
+            socket.emit("stop typing", conversation._id);
+            setIsTyping(false);
+        }
+        
         onSendMessage(newMessage);
         setNewMessage('');
     };
@@ -197,6 +230,38 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
                         </motion.div>
                     ))}
                 </AnimatePresence>
+                
+                {/* Typing Indicator */}
+                <AnimatePresence>
+                    {typing && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500 dark:text-gray-400"
+                        >
+                            <div className="flex space-x-1">
+                                <motion.div
+                                    className="w-2 h-2 bg-gray-400 rounded-full"
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                                />
+                                <motion.div
+                                    className="w-2 h-2 bg-gray-400 rounded-full"
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                                />
+                                <motion.div
+                                    className="w-2 h-2 bg-gray-400 rounded-full"
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                />
+                            </div>
+                            <span>Someone is typing...</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                
                 <div ref={messagesEndRef} />
             </div>
 
@@ -212,7 +277,7 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage }) => {
                         <input
                             type="text"
                             value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
+                            onChange={handleInputChange}
                             placeholder="Type your message here..."
                             className="w-full px-4 py-3 glass border-0 rounded-2xl focus:ring-2 focus:ring-green-500/50 focus:outline-none pr-20 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300"
                         />
@@ -260,6 +325,10 @@ export default function ChatLayoutPage({ params }) {
     const [activeConversation, setActiveConversation] = useState(null);
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [typing, setTyping] = useState(false);
+    
+    // Initialize Socket.IO connection
+    const { socket, socketConnected } = useRealtimeSocket(user?.id, conversationId);
 
     // Effect to fetch all conversations for the sidebar
     useEffect(() => {
@@ -278,7 +347,7 @@ export default function ChatLayoutPage({ params }) {
         fetchConversations();
     }, [user]);
 
-    // Effect to fetch the active chat's data and set up polling
+    // Effect to fetch the active chat's data and set up real-time listeners
     useEffect(() => {
         if (!user || !conversationId) return;
 
@@ -305,24 +374,59 @@ export default function ChatLayoutPage({ params }) {
         };
 
         fetchActiveChatData();
-        
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/messages?conversationId=${conversationId}`);
-                const data = await res.json();
-                setMessages(data);
-            } catch (error) {
-                console.error("Polling error:", error);
-            }
-        }, 3000);
-
-        return () => clearInterval(interval);
 
     }, [user, conversationId]);
 
+    // Set up real-time socket listeners
+    useEffect(() => {
+        if (!socket || !socketConnected) return;
+
+        // Listen for new messages
+        socket.on("message received", (newMessage) => {
+            console.log("📨 New message received:", newMessage);
+            setMessages(prev => {
+                // Avoid duplicates
+                const exists = prev.some(msg => msg._id === newMessage._id);
+                if (exists) return prev;
+                return [...prev, newMessage];
+            });
+        });
+
+        // Listen for typing indicators
+        socket.on("typing", () => {
+            console.log("⌨️ Someone is typing...");
+            setTyping(true);
+        });
+
+        socket.on("stop typing", () => {
+            console.log("⌨️ Stopped typing");
+            setTyping(false);
+        });
+
+        // Listen for session end
+        socket.on("session ended", ({ endedBy, userRole }) => {
+            console.log(`🔚 Session ended by ${userRole}: ${endedBy}`);
+            alert(`Chat session ended by ${userRole}`);
+        });
+
+        // Cleanup listeners
+        return () => {
+            socket.off("message received");
+            socket.off("typing");
+            socket.off("stop typing");
+            socket.off("session ended");
+        };
+    }, [socket, socketConnected]);
+
     const handleSendMessage = async (text) => {
-        if (!text.trim() || !user?.id) return;
-        const optimisticMessage = { _id: Date.now().toString(), text, senderId: { clerkId: user.id } };
+        if (!text.trim() || !user?.id || !socket) return;
+        
+        const optimisticMessage = { 
+            _id: Date.now().toString(), 
+            text, 
+            senderId: { clerkId: user.id },
+            createdAt: new Date().toISOString()
+        };
         setMessages((prev) => [...prev, optimisticMessage]);
 
         try {
@@ -331,7 +435,22 @@ export default function ChatLayoutPage({ params }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ conversationId, text }),
             });
+            
             if (!res.ok) throw new Error('Failed to send message.');
+            
+            const savedMessage = await res.json();
+            
+            // Emit the message via socket for real-time delivery
+            socket.emit("new message", {
+                chatId: conversationId,
+                message: savedMessage
+            });
+            
+            // Replace optimistic message with real one
+            setMessages(prev => prev.map(msg => 
+                msg._id === optimisticMessage._id ? savedMessage : msg
+            ));
+            
         } catch (error) {
             console.error(error);
             setMessages(prev => prev.filter(m => m._id !== optimisticMessage._id));
@@ -389,6 +508,8 @@ export default function ChatLayoutPage({ params }) {
                             messages={messages}
                             user={user}
                             onSendMessage={handleSendMessage}
+                            socket={socket}
+                            typing={typing}
                         />
                     ) : (
                         <motion.div 

@@ -7,7 +7,8 @@ export async function GET(req, { params }) {
   await dbConnect();
   
   try {
-    const comments = await PeerComment.find({ postId: params.postId })
+    const { postId } = await params; // Await params in Next.js 15
+    const comments = await PeerComment.find({ postId })
       .sort({ createdAt: "asc" })
       // Populate fetches the commenter's info from the User collection
       .populate("userId", "profile.nickname profile.avatarUrl") 
@@ -25,6 +26,7 @@ export async function POST(req, { params }) {
 
   try {
     const { clerkId, body } = await req.json();
+    const { postId } = await params; // Await params in Next.js 15
 
     // Find the user in your database by their Clerk ID
     const user = await User.findOne({ clerkId });
@@ -35,7 +37,7 @@ export async function POST(req, { params }) {
     // Create the new comment
     const newComment = new PeerComment({
       body,
-      postId: params.postId,
+      postId,
       userId: user._id, // Use the user's MongoDB ObjectId
     });
 

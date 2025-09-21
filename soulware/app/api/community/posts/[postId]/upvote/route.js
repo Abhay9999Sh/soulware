@@ -6,6 +6,7 @@ export async function POST(req, { params }) {
   await dbConnect();
 
   const { userId: clerkId } = await req.json();
+  const { postId } = await params; // Await params in Next.js 15
 
   // Find the user document to get their MongoDB _id
   const user = await User.findOne({ clerkId });
@@ -13,7 +14,7 @@ export async function POST(req, { params }) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const post = await PeerPost.findById(params.postId);
+  const post = await PeerPost.findById(postId);
   if (!post) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }

@@ -175,10 +175,19 @@ const conversationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   }],
+  title: {
+    type: String,
+    default: 'Chat Session'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  }
 }, { timestamps: true });
 
-// Ensure that any pair of participants is unique to prevent duplicate conversations
-conversationSchema.index({ participants: 1 }, { unique: true });
+// Index for better performance on queries, but not unique to allow multiple conversations
+conversationSchema.index({ participants: 1 });
+conversationSchema.index({ createdAt: -1 });
 
 export const Conversation = mongoose.models.Conversation || mongoose.model('Conversation', conversationSchema);
 

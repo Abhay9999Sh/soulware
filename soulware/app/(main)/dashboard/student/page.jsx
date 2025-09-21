@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import StudentQuizCheck from "@/components/StudentQuizCheck";
 // NEW: Import the chatbot component
 // import FloatingChatbot from "@/components/FloatingChatbot"; 
 import { 
@@ -386,7 +387,8 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-pink-50 to-purple-50 dark:from-slate-900 dark:via-purple-900 dark:to-indigo-900 transition-all duration-1000 overflow-hidden">
+    <StudentQuizCheck>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-pink-50 to-purple-50 dark:from-slate-900 dark:via-purple-900 dark:to-indigo-900 transition-all duration-1000 overflow-hidden">
       {/* Dreamy Background Animations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -799,7 +801,8 @@ export default function StudentDashboard() {
       
       {/* The chatbot component is now rendered here from its own file
       <FloatingChatbot isOpen={isChatbotOpen} setIsOpen={setIsChatbotOpen} /> */}
-    </div>
+      </div>
+    </StudentQuizCheck>
   );
 }
 

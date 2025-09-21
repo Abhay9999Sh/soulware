@@ -180,6 +180,10 @@ const StarterQuizPage = () => {
   const { user } = useUser();
   const [quizCompleted, setQuizCompleted] = useState(false);
 
+  // Get the return URL from query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const returnTo = urlParams.get('returnTo');
+
   const handleQuizComplete = async (quizResult) => {
     console.log("Starter quiz completed:", quizResult);
     
@@ -205,8 +209,9 @@ const StarterQuizPage = () => {
       setQuizCompleted(true);
       
       setTimeout(() => {
-        // Redirect to a student-specific dashboard
-        window.location.href = '/dashboard/student'; 
+        // Redirect to where they originally wanted to go, or default to dashboard
+        const redirectUrl = returnTo || '/dashboard/student';
+        window.location.href = redirectUrl; 
       }, 3000);
 
     } catch (error) {

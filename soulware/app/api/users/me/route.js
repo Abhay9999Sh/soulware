@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { createClerkClient } from '@clerk/backend';
 import clientPromise from '@/lib/mongodb';
+
+// Initialize Clerk client with secret key
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 export async function GET() {
   try {

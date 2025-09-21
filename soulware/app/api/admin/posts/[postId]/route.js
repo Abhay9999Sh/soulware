@@ -15,18 +15,20 @@ export async function DELETE(req, { params }) {
     await dbConnect();
     try {
         const { userId: clerkId } = await auth();
+        const { postId } = await params; // Await params in Next.js 15
+        
         if (!await isAdmin(clerkId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        const deletedPost = await PeerPost.findByIdAndDelete(params.postId);
+        const deletedPost = await PeerPost.findByIdAndDelete(postId);
         if (!deletedPost) {
             return NextResponse.json({ error: "Post not found" }, { status: 404 });
         }
 
         // Cleanup: Also delete associated comments and reports to keep the DB clean
-        await PeerComment.deleteMany({ postId: params.postId });
-        await PeerReport.deleteMany({ targetId: params.postId, targetType: 'post' });
+        await PeerComment.deleteMany({ postId });
+        await PeerReport.deleteMany({ targetId: postId, targetType: 'post' });
 
         return NextResponse.json({ message: "Post and associated content deleted successfully" });
     } catch (error) {
@@ -40,13 +42,15 @@ export async function DELETE(req, { params }) {
 export async function PATCH(req, { params }) {
     await dbConnect();
     try {
-        const { userId: clerkId } = auth();
+        const { userId: clerkId } = await auth();
+        const { postId } = await params; // Await params in Next.js 15
+        
         if (!await isAdmin(clerkId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         const updatedPost = await PeerPost.findByIdAndUpdate(
-            params.postId,
+            postId,
             { $set: { pushedToAdmin: false } }, // Set the flag to false
             { new: true }
         );

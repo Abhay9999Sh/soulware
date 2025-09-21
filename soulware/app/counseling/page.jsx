@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from 'next/navigation';
+import StudentQuizCheck from "@/components/StudentQuizCheck";
 
 // Enhanced BookingModal with glassmorphism design
 const BookingModal = ({ counselor, onClose, onSubmit }) => {
@@ -421,8 +422,8 @@ const CounselingPage = () => {
                                             >
                                                 <MessageCircle className="w-8 h-8 text-white" />
                                             </motion.div>
-                                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Chat Now</h4>
-                                            <p className="text-gray-600 dark:text-gray-400 mb-4">Start an instant conversation</p>
+                                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Start New Chat</h4>
+                                            <p className="text-gray-600 dark:text-gray-400 mb-4">Begin a new conversation session</p>
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}

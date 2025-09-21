@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs"; 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
   Heart, 
@@ -27,6 +27,8 @@ const colors = {
 export default function Onboarding() {
   const { user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect'); // Get where user wanted to go
   const [loading, setLoading] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -40,16 +42,49 @@ export default function Onboarding() {
         const data = await res.json();
 
         if (data?.role) {
-          // Already onboarded → redirect to dashboard
-          setIsRedirecting(true);
-          setTimeout(() => {
-            if (data.role === "student") router.push("/dashboard/student");
-            if (data.role === "counselor") router.push("/dashboard/counselor");
-            if (data.role === "volunteer") router.push("/dashboard/volunteer");
-            if (data.role === "admin") router.push("/dashboard/admin");
-          }, 1500);
+          // User exists, now check if they've completed the starter quiz
+          const quizRes = await fetch('/api/quiz/score');
+          const quizData = await quizRes.json();
+          
+          if (quizData?.score !== null && quizData?.score !== undefined) {
+            // User has completed both onboarding and starter quiz
+            setIsRedirecting(true);
+            setTimeout(() => {
+              // If they were trying to access a specific page, redirect there
+              if (redirectTo) {
+                router.push(redirectTo);
+              } else {
+                // Otherwise redirect to their role-based dashboard
+                if (data.role === "student") router.push("/dashboard/student");
+                if (data.role === "counselor") router.push("/dashboard/counselor");
+                if (data.role === "volunteer") router.push("/dashboard/volunteer");
+                if (data.role === "admin") router.push("/dashboard/admin");
+              }
+            }, 1500);
+          } else {
+            // User exists but hasn't taken starter quiz
+            // Only redirect students to quiz, others can access their features
+            if (data.role === "student") {
+              setIsRedirecting(true);
+              setTimeout(() => {
+                router.push("/quiz/starter");
+              }, 1500);
+            } else {
+              // Non-students can access their requested page
+              setIsRedirecting(true);
+              setTimeout(() => {
+                if (redirectTo) {
+                  router.push(redirectTo);
+                } else {
+                  if (data.role === "counselor") router.push("/dashboard/counselor");
+                  if (data.role === "volunteer") router.push("/dashboard/volunteer");
+                  if (data.role === "admin") router.push("/dashboard/admin");
+                }
+              }, 1500);
+            }
+          }
         } else {
-          // New user (likely a Student) → show onboarding
+          // New user → show onboarding form
           setLoading(false);
         }
       } catch (err) {
@@ -59,7 +94,7 @@ export default function Onboarding() {
     }
 
     checkUser();
-  }, [user, router]);
+  }, [user, router, redirectTo]);
 
   if (loading) {
     return (

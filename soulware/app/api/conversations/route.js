@@ -37,7 +37,7 @@ export async function GET() {
     }
 }
 
-// POST: Finds an existing conversation or creates a new one
+// POST: Creates a new conversation (allows multiple conversations between same participants)
 export async function POST(req) {
     const { userId: studentClerkId } = await auth();
     if (!studentClerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -49,46 +49,28 @@ export async function POST(req) {
         const student = await User.findOne({ clerkId: studentClerkId });
         if (!student) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
+        const counselor = await User.findById(counselorUserId);
+        if (!counselor) return NextResponse.json({ error: "Counselor not found" }, { status: 404 });
+
         const studentId = student._id;
         const counselorId = counselorUserId;
 
-        // Sort participants to ensure consistent ordering for the unique index
-        // This prevents [A,B] vs [B,A] duplicate key issues
-        const sortedParticipants = [studentId, counselorId].sort((a, b) => 
-            a.toString().localeCompare(b.toString())
-        );
+        // Always create a new conversation to allow multiple chat sessions
+        const conversation = new Conversation({
+            participants: [studentId, counselorId],
+            title: `Chat with ${counselor.profile?.displayName || 'Counselor'}`,
+            isActive: true
+        });
+        
+        await conversation.save();
 
-        // Use try-catch with findOne first, then create if needed
-        let conversation = await Conversation.findOne({
-            participants: { $all: sortedParticipants }
+        return NextResponse.json({ 
+            conversationId: conversation._id,
+            message: "New chat session created successfully"
         });
 
-        if (!conversation) {
-            try {
-                conversation = new Conversation({
-                    participants: sortedParticipants
-                });
-                await conversation.save();
-            } catch (duplicateError) {
-                // If we get a duplicate key error, it means another request created it
-                // So let's find the existing conversation
-                if (duplicateError.code === 11000) {
-                    conversation = await Conversation.findOne({
-                        participants: { $all: sortedParticipants }
-                    });
-                    if (!conversation) {
-                        throw new Error("Failed to create or find conversation");
-                    }
-                } else {
-                    throw duplicateError;
-                }
-            }
-        }
-
-        return NextResponse.json({ conversationId: conversation._id });
-
     } catch (error) {
-        console.error("Error starting or finding conversation:", error);
+        console.error("Error creating conversation:", error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

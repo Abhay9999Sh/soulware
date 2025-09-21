@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
+import StudentQuizCheck from "@/components/StudentQuizCheck";
 import {
   MessageCircle,
   Send,
@@ -207,7 +208,8 @@ const AnonymousChat = () => {
   const getCategoryColor = category => categories.find(c => c.id === category)?.color || "text-gray-600";
 
   return (
-    <ProtectedRoute>
+    <StudentQuizCheck>
+      <ProtectedRoute>
       <div className="min-h-screen gradient-hero dark:gradient-hero-dark transition-all duration-500">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <motion.div className="absolute top-20 left-10 w-32 h-32 bg-purple-200/20 dark:bg-purple-800/20 rounded-full blur-xl" animate={{ y: [0, -20, 0], x: [0, 10, 0] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} />
@@ -352,7 +354,8 @@ const AnonymousChat = () => {
           )}
         </AnimatePresence>
       </div>
-    </ProtectedRoute>
+      </ProtectedRoute>
+    </StudentQuizCheck>
   );
 };
 
