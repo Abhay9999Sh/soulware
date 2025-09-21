@@ -1,0 +1,577 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #FEFEFE;
+  --foreground: #1E293B;
+  --card: #FFFFFF;
+  --card-foreground: #1E293B;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E293B;
+  --primary: #3B82F6;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EBF5FF;
+  --secondary-foreground: #1E40AF;
+  --muted: #F8FAFC;
+  --muted-foreground: #64748B;
+  --accent: #F0EFFF;
+  --accent-foreground: #5B21B6;
+  --destructive: #EF4444;
+  --border: #E2E8F0;
+  --input: #F1F5F9;
+  --ring: #3B82F6;
+  --chart-1: #3B82F6;
+  --chart-2: #8B5CF6;
+  --chart-3: #10B981;
+  --chart-4: #F59E0B;
+  --chart-5: #EF4444;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1E293B;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EBF5FF;
+  --sidebar-accent-foreground: #1E40AF;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #3B82F6;
+  
+  /* Enhanced calming colors for light theme */
+  --calming-blue: #EBF5FF;
+  --calming-purple: #F0EFFF;
+  --calming-green: #EBF9F6;
+  --calming-pink: #FDF2F8;
+  --calming-yellow: #FFFBEB;
+  --calming-teal: #F0FDFA;
+  --soft-blue: #3B82F6;
+  --soft-purple: #8B5CF6;
+  --soft-green: #10B981;
+  --soft-pink: #EC4899;
+  --soft-yellow: #F59E0B;
+  --soft-teal: #14B8A6;
+  
+  /* Glassmorphism variables */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(0, 0, 0, 0.1);
+  
+  /* Animation variables */
+  --transition-fast: 0.15s ease-out;
+  --transition-normal: 0.3s ease-out;
+  --transition-slow: 0.5s ease-out;
+  --bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --card: #1E293B;
+  --card-foreground: #F8FAFC;
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+  --primary: #60A5FA;
+  --primary-foreground: #0F172A;
+  --secondary: #1E3A8A;
+  --secondary-foreground: #DBEAFE;
+  --muted: #334155;
+  --muted-foreground: #94A3B8;
+  --accent: #581C87;
+  --accent-foreground: #E9D5FF;
+  --destructive: #DC2626;
+  --border: #334155;
+  --input: #475569;
+  --ring: #60A5FA;
+  --chart-1: #60A5FA;
+  --chart-2: #A78BFA;
+  --chart-3: #34D399;
+  --chart-4: #FBBF24;
+  --chart-5: #F87171;
+  --sidebar: #1E293B;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #60A5FA;
+  --sidebar-primary-foreground: #0F172A;
+  --sidebar-accent: #1E3A8A;
+  --sidebar-accent-foreground: #DBEAFE;
+  --sidebar-border: #334155;
+  --sidebar-ring: #60A5FA;
+  
+  /* Enhanced calming colors for dark theme */
+  --calming-blue: #1E3A8A;
+  --calming-purple: #581C87;
+  --calming-green: #064E3B;
+  --calming-pink: #831843;
+  --calming-yellow: #92400E;
+  --calming-teal: #134E4A;
+  --soft-blue: #60A5FA;
+  --soft-purple: #A78BFA;
+  --soft-green: #34D399;
+  --soft-pink: #F472B6;
+  --soft-yellow: #FBBF24;
+  --soft-teal: #2DD4BF;
+  
+  /* Dark glassmorphism variables */
+  --glass-bg: rgba(30, 41, 59, 0.85);
+  --glass-border: rgba(148, 163, 184, 0.1);
+  --glass-shadow: rgba(0, 0, 0, 0.3);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  
+  /* Dark mode styles */
+  .dark {
+    --background: #0F172A;
+    --foreground: #F8FAFC;
+    --calming-blue: #1E3A8A;
+    --calming-purple: #581C87;
+    --calming-green: #064E3B;
+  }
+}
+
+@layer utilities {
+  /* Color utilities */
+  .calming-blue {
+    background-color: var(--calming-blue);
+  }
+  .calming-purple {
+    background-color: var(--calming-purple);
+  }
+  .calming-green {
+    background-color: var(--calming-green);
+  }
+  .calming-pink {
+    background-color: var(--calming-pink);
+  }
+  .calming-yellow {
+    background-color: var(--calming-yellow);
+  }
+  .calming-teal {
+    background-color: var(--calming-teal);
+  }
+  .soft-blue {
+    color: var(--soft-blue);
+  }
+  .soft-purple {
+    color: var(--soft-purple);
+  }
+  .soft-green {
+    color: var(--soft-green);
+  }
+  .soft-pink {
+    color: var(--soft-pink);
+  }
+  .soft-yellow {
+    color: var(--soft-yellow);
+  }
+  .soft-teal {
+    color: var(--soft-teal);
+  }
+  
+  /* Enhanced gradients */
+  .gradient-calm {
+    background: linear-gradient(135deg, var(--calming-blue) 0%, var(--calming-purple) 50%, var(--calming-green) 100%);
+  }
+  .gradient-hero {
+    background: linear-gradient(135deg, var(--calming-blue) 0%, var(--calming-purple) 50%, var(--calming-green) 100%);
+  }
+  .gradient-hero-dark {
+    background: linear-gradient(135deg, #1E3A8A 0%, #581C87 50%, #064E3B 100%);
+  }
+  .gradient-interactive {
+    background: linear-gradient(135deg, var(--soft-blue) 0%, var(--soft-purple) 100%);
+  }
+  .gradient-success {
+    background: linear-gradient(135deg, var(--soft-green) 0%, var(--soft-teal) 100%);
+  }
+  .gradient-warning {
+    background: linear-gradient(135deg, var(--soft-yellow) 0%, var(--soft-pink) 100%);
+  }
+  
+  /* Glassmorphism effects */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px var(--glass-shadow);
+  }
+  .glass-strong {
+    background: var(--glass-bg);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 12px 40px var(--glass-shadow);
+  }
+  
+  /* Interactive animations */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  .animate-bounce-soft {
+    animation: bounce-soft 1s ease-in-out infinite;
+  }
+  
+  /* Hover effects */
+  .hover-lift {
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  }
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px var(--glass-shadow);
+  }
+  
+  .hover-scale {
+    transition: transform var(--transition-fast);
+  }
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+  
+  .hover-glow {
+    transition: box-shadow var(--transition-normal);
+  }
+  .hover-glow:hover {
+    box-shadow: 0 0 30px var(--soft-blue);
+  }
+  
+  /* Button effects */
+  .btn-interactive {
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-normal);
+  }
+  .btn-interactive::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left var(--transition-slow);
+  }
+  .btn-interactive:hover::before {
+    left: 100%;
+  }
+  
+  /* Loading states */
+  .skeleton {
+    background: linear-gradient(90deg, var(--muted) 25%, var(--accent) 50%, var(--muted) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all var(--transition-normal) var(--smooth);
+  }
+  .transition-bounce {
+    transition: all var(--transition-normal) var(--bounce);
+  }
+}
+
+/* Keyframe animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px var(--soft-blue); }
+  to { box-shadow: 0 0 30px var(--soft-purple), 0 0 40px var(--soft-blue); }
+}
+
+@keyframes bounce-soft {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Responsive utilities */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-pulse-soft,
+  .animate-glow,
+  .animate-bounce-soft {
+    animation: none;
+  }
+  
+  .hover-lift:hover,
+  .hover-scale:hover {
+    transform: none;
+  }
+}
+
+
+/* Hide the default Google Translate dropdown */
+#google_translate_element {
+  display: none;
+}
+
+/* Hide the Google Translate banner at the top of the page */
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Remove the top margin added by the banner */
+body {
+  top: 0 !important;
+}
+/* --- HIDE GOOGLE TRANSLATE UI --- */
+
+/* Hide the top banner "Translated to: English" */
+.skiptranslate {
+  display: none !important;
+}
+
+/* Remove the top margin that the banner creates */
+body {
+  top: 0 !important;
+}
+
+/* Hide the "Original text" tooltip popup */
+.goog-tooltip {
+  display: none !important;
+}
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+/* Hide the highlight that appears on hover, which triggers the tooltip */
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* --- PREVENT TRANSLATION OF LANGUAGE SWITCHER --- */
+.notranslate {
+  translate: no !important;
+}
+
+/* Ensure language dropdown elements are never translated */
+.notranslate * {
+  translate: no !important;
+}
+
+/* Alternative method to prevent translation */
+[translate="no"] {
+  translate: no !important;
+}
+
+/* Force Google Translate to ignore these elements */
+.notranslate, 
+.notranslate *,
+[class*="language"],
+[class*="Language"] {
+  -webkit-transform: none !important;
+  transform: none !important;
+}
+
+/* ===== CHATBASE CAREBOT CUSTOM STYLING ===== */
+/* Soulware Dreamy Theme for Chatbase Widget */
+
+/* Main chatbase iframe container */
+#chatbase-bubble-button {
+  /* Custom floating button styling */
+  background: linear-gradient(135deg, #6495ED, #E996AF) !important;
+  border: none !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border-radius: 50% !important;
+  transition: all 0.3s ease !important;
+  animation: float 3s ease-in-out infinite !important;
+}
+
+#chatbase-bubble-button:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Chatbase widget iframe */
+iframe[src*="chatbase"] {
+  /* Dreamy border styling */
+  border-radius: 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border: 2px solid rgba(100, 149, 237, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Custom maximize functionality */
+.chatbase-maximize-btn {
+  position: absolute !important;
+  top: 10px !important;
+  right: 50px !important;
+  z-index: 9999 !important;
+  background: linear-gradient(135deg, #6495ED, #E996AF) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  cursor: pointer !important;
+  color: white !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.chatbase-maximize-btn:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Fullscreen mode */
+.chatbase-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  background: linear-gradient(135deg, 
+    rgba(135, 206, 235, 0.05), 
+    rgba(255, 182, 193, 0.05), 
+    rgba(230, 230, 250, 0.05)
+  ) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+.dark .chatbase-fullscreen {
+  background: linear-gradient(135deg, 
+    rgba(15, 23, 42, 0.95), 
+    rgba(88, 28, 135, 0.95), 
+    rgba(67, 56, 202, 0.95)
+  ) !important;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Custom scrollbar for chat */
+iframe[src*="chatbase"] ::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+iframe[src*="chatbase"] ::-webkit-scrollbar-track {
+  background: rgba(100, 149, 237, 0.1) !important;
+  border-radius: 3px !important;
+}
+
+iframe[src*="chatbase"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #6495ED, #E996AF) !important;
+  border-radius: 3px !important;
+}
+
+iframe[src*="chatbase"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a85d6, #d687a0) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chatbase-fullscreen {
+    border-radius: 0 !important;
+  }
+  
+  #chatbase-bubble-button {
+    bottom: 20px !important;
+    right: 20px !important;
+  }
+}
+
+/* Dark theme adjustments */
+.dark iframe[src*="chatbase"] {
+  border-color: rgba(163, 163, 204, 0.3) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+/* Pulse effect for attention */
+.chatbase-pulse {
+  animation: pulse 2s infinite !important;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Enhanced shadow effects */
+.chatbase-enhanced-shadow {
+  box-shadow: 
+    0 25px 50px -12px rgba(100, 149, 237, 0.25),
+    0 0 0 1px rgba(100, 149, 237, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .chatbase-enhanced-shadow {
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(163, 163, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
