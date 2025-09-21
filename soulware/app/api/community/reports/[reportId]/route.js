@@ -6,7 +6,7 @@ import { PeerReport } from "@/lib/models";
 export async function DELETE(request, { params }) {
   await dbConnect();
   try {
-    const { reportId } = params; // Destructure reportId from params
+    const { reportId } = await params; // Await params in Next.js 15
     const deletedReport = await PeerReport.findByIdAndDelete(reportId);
 
     if (!deletedReport) {

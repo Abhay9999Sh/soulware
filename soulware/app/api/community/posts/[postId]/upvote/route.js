@@ -6,7 +6,7 @@ export async function POST(req, { params }) {
   await dbConnect();
 
   const { userId: clerkId } = await req.json();
-  const { postId } = await params; // Await params in Next.js 15
+  const { postId } = await params; // Fixed for Next.js 15 compatibility
 
   // Find the user document to get their MongoDB _id
   const user = await User.findOne({ clerkId });

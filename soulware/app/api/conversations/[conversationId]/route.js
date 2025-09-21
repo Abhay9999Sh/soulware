@@ -5,7 +5,7 @@ import { User, Conversation } from '@/lib/models';
 
 export async function GET(req, { params }) {
     const { userId: clerkId } = await auth();
-    const { conversationId } = params;
+    const { conversationId } = await params; // Await params in Next.js 15
 
     if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

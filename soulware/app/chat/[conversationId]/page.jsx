@@ -10,7 +10,7 @@ import { useRealtimeSocket } from '@/hooks/userealtime';
 
 // --- Sub-components for the new layout ---
 
-const ConversationSidebar = ({ conversations, activeConversationId }) => (
+const ConversationSidebar = ({ conversations, activeConversationId, currentUserRole }) => (
     <motion.aside 
         initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
@@ -33,6 +33,26 @@ const ConversationSidebar = ({ conversations, activeConversationId }) => (
             <div className="space-y-3">
                 {conversations.map((convo, index) => {
                     const otherUser = convo.otherParticipant;
+                    
+                    // Display logic for sidebar
+                    const getSidebarDisplayInfo = () => {
+                        if (currentUserRole === 'counselor') {
+                            return {
+                                name: 'Anonymous Student',
+                                avatar: '👤',
+                                bgColor: 'bg-gradient-to-r from-gray-500 to-gray-600'
+                            };
+                        } else {
+                            return {
+                                name: otherUser?.profile?.displayName || 'Professional Counselor',
+                                avatar: otherUser?.profile?.displayName?.charAt(0) || '👩‍⚕️',
+                                bgColor: 'bg-gradient-to-r from-green-500 to-blue-500'
+                            };
+                        }
+                    };
+                    
+                    const sidebarInfo = getSidebarDisplayInfo();
+                    
                     return (
                         <Link href={`/chat/${convo._id}`} key={convo._id}>
                             <motion.div 
@@ -49,19 +69,15 @@ const ConversationSidebar = ({ conversations, activeConversationId }) => (
                             >
                                 <div className="flex items-center gap-3">
                                     <motion.div 
-                                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-2xl transition-all duration-300 ${
-                                            activeConversationId === convo._id 
-                                                ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white' 
-                                                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                                        }`}
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${sidebarInfo.bgColor}`}
                                         animate={activeConversationId === convo._id ? { scale: [1, 1.1, 1] } : {}}
                                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                                     >
-                                        {otherUser?.profile?.displayName?.charAt(0) || "👩‍⚕️"}
+                                        {sidebarInfo.avatar}
                                     </motion.div>
                                     <div className="flex-1 overflow-hidden">
                                         <p className="font-bold text-gray-900 dark:text-white truncate">
-                                            {otherUser?.profile?.displayName || 'Counselor'}
+                                            {sidebarInfo.name}
                                         </p>
                                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                             {convo.lastMessage || 'Start a conversation'}
@@ -100,6 +116,45 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
     }, [messages]);
     
     const otherUser = conversation.participants?.find(p => p.clerkId !== user.id);
+    
+    // Get current user's role to determine display logic
+    const [currentUserRole, setCurrentUserRole] = useState(null);
+    
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            try {
+                const res = await fetch('/api/users/me');
+                const userData = await res.json();
+                setCurrentUserRole(userData.role);
+            } catch (error) {
+                console.error('Failed to fetch user role:', error);
+            }
+        };
+        if (user) fetchUserRole();
+    }, [user]);
+    
+    // Display logic based on user role
+    const getDisplayInfo = () => {
+        if (!otherUser) return { name: 'User', avatar: '👤', role: 'User' };
+        
+        if (currentUserRole === 'counselor') {
+            // Counselors see students as anonymous
+            return {
+                name: 'Anonymous Student',
+                avatar: '👤',
+                role: 'Student (Anonymous)'
+            };
+        } else {
+            // Students see counselor's real info
+            return {
+                name: otherUser.profile?.displayName || 'Professional Counselor',
+                avatar: otherUser.profile?.displayName?.charAt(0) || '👩‍⚕️',
+                role: 'Professional Counselor'
+            };
+        }
+    };
+    
+    const displayInfo = getDisplayInfo();
 
     const handleInputChange = (e) => {
         setNewMessage(e.target.value);
@@ -164,21 +219,25 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
                             <ArrowLeft className="w-5 h-5" />
                         </motion.button>
                         
-                        {/* Counselor Info */}
+                        {/* User Info */}
                         <div className="flex items-center gap-3">
                             <motion.div 
-                                className="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white font-bold text-xl"
+                                className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl ${
+                                    currentUserRole === 'counselor' 
+                                        ? 'bg-gradient-to-r from-gray-500 to-gray-600' 
+                                        : 'bg-gradient-to-r from-green-500 to-blue-500'
+                                }`}
                                 animate={{ scale: [1, 1.05, 1] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                             >
-                                {otherUser?.profile?.displayName?.charAt(0) || "👩‍⚕️"}
+                                {displayInfo.avatar}
                             </motion.div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                                    {otherUser?.profile?.displayName || 'Counselor'}
+                                    {displayInfo.name}
                                 </h2>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Professional Counselor
+                                    {displayInfo.role}
                                 </p>
                             </div>
                         </div>
@@ -199,8 +258,12 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
                             className={`flex items-end gap-3 ${msg.senderId?.clerkId === user?.id ? 'justify-end' : 'justify-start'}`}
                         >
                             {msg.senderId?.clerkId !== user?.id && (
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                                    {otherUser?.profile?.displayName?.charAt(0) || "👩‍⚕️"}
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
+                                    currentUserRole === 'counselor' 
+                                        ? 'bg-gradient-to-r from-gray-500 to-gray-600' 
+                                        : 'bg-gradient-to-r from-green-500 to-blue-500'
+                                }`}>
+                                    {displayInfo.avatar}
                                 </div>
                             )}
                             <div className="max-w-xs md:max-w-md">
@@ -326,9 +389,24 @@ export default function ChatLayoutPage({ params }) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [typing, setTyping] = useState(false);
+    const [currentUserRole, setCurrentUserRole] = useState(null);
     
     // Initialize Socket.IO connection
     const { socket, socketConnected } = useRealtimeSocket(user?.id, conversationId);
+
+    // Fetch current user's role
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            try {
+                const res = await fetch('/api/users/me');
+                const userData = await res.json();
+                setCurrentUserRole(userData.role);
+            } catch (error) {
+                console.error('Failed to fetch user role:', error);
+            }
+        };
+        if (user) fetchUserRole();
+    }, [user]);
 
     // Effect to fetch all conversations for the sidebar
     useEffect(() => {
@@ -500,7 +578,7 @@ export default function ChatLayoutPage({ params }) {
             </div>
 
             <div className="flex flex-1 relative z-10 min-h-0">
-                <ConversationSidebar conversations={conversations} activeConversationId={conversationId} />
+                <ConversationSidebar conversations={conversations} activeConversationId={conversationId} currentUserRole={currentUserRole} />
                 <div className="flex-1 flex flex-col min-h-0">
                     {activeConversation ? (
                         <ChatWindow 

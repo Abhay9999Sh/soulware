@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 export async function PATCH(request, { params }) {
   await dbConnect();
   try {
-    const { postId } = params;
+    const { postId } = await params; // Await params in Next.js 15
 
     const { userId: clerkId } = await auth();
     if (!clerkId) {

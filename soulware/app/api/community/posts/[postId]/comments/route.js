@@ -7,7 +7,7 @@ export async function GET(req, { params }) {
   await dbConnect();
   
   try {
-    const { postId } = await params; // Await params in Next.js 15
+    const { postId } = await params; // Next.js 15 fix - await params
     const comments = await PeerComment.find({ postId })
       .sort({ createdAt: "asc" })
       // Populate fetches the commenter's info from the User collection
