@@ -37,7 +37,7 @@ export async function GET() {
     }
 }
 
-// POST: Creates a new conversation (allows multiple conversations between same participants)
+// POST: Find existing conversation or create a new one (single chat per student-counselor pair)
 export async function POST(req) {
     const { userId: studentClerkId } = await auth();
     if (!studentClerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -55,19 +55,39 @@ export async function POST(req) {
         const studentId = student._id;
         const counselorId = counselorUserId;
 
-        // Always create a new conversation to allow multiple chat sessions
-        const conversation = new Conversation({
-            participants: [studentId, counselorId],
-            title: `Chat with ${counselor.profile?.displayName || 'Counselor'}`,
+        // Check if there's already an active conversation between this student and counselor
+        let conversation = await Conversation.findOne({
+            participants: { $all: [studentId, counselorId] },
             isActive: true
-        });
-        
-        await conversation.save();
+        }).populate('participants', 'clerkId profile');
 
-        return NextResponse.json({ 
-            conversationId: conversation._id,
-            message: "New chat session created successfully"
-        });
+        // If no existing conversation, create a new one
+        if (!conversation) {
+            conversation = new Conversation({
+                participants: [studentId, counselorId],
+                title: `Chat with ${counselor.profile?.displayName || 'Counselor'}`,
+                isActive: true
+            });
+            
+            await conversation.save();
+            
+            // Populate the participants for consistent response
+            conversation = await Conversation.findById(conversation._id)
+                .populate('participants', 'clerkId profile');
+
+            return NextResponse.json({ 
+                conversationId: conversation._id,
+                message: "New chat session created successfully",
+                isNewConversation: true
+            });
+        } else {
+            // Return existing conversation
+            return NextResponse.json({ 
+                conversationId: conversation._id,
+                message: "Continuing existing chat session",
+                isNewConversation: false
+            });
+        }
 
     } catch (error) {
         console.error("Error creating conversation:", error);

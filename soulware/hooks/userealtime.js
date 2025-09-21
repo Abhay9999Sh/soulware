@@ -16,7 +16,9 @@ export const useRealtimeSocket = (userId, chatId) => {
 
         // Connect to socket.io
         socket = io(ENDPOINT, {
-          transports: ["websocket"],
+          transports: ["websocket", "polling"],
+          upgrade: true,
+          rememberUpgrade: true,
         });
 
         socket.on("connect", () => {

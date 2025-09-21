@@ -41,13 +41,22 @@ export default function handler(req, res) {
         }
       });
 
-      socket.on("typing", (room) => socket.in(room).emit("typing"));
-      socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
+      socket.on("typing", ({ room, userId }) => {
+        console.log(`⌨️ User ${userId} is typing in room ${room}`);
+        socket.in(room).emit("typing", userId);
+      });
+      
+      socket.on("stop typing", ({ room, userId }) => {
+        console.log(`⌨️ User ${userId} stopped typing in room ${room}`);
+        socket.in(room).emit("stop typing", userId);
+      });
 
       socket.on("new message", ({ chatId, message }) => {
         if (!chatId) return console.log("chatId not defined");
-        io.in(chatId).emit("message received", message); // send to all in room
-        console.log("Message broadcasted to:", chatId);
+        console.log("📤 Broadcasting message to room:", chatId, message);
+        // Broadcast to all users in the room (including sender for confirmation)
+        io.to(chatId).emit("message received", message);
+        console.log("✅ Message broadcasted to room:", chatId);
       });
 
       socket.on("end session", ({ chatId, endedBy, userRole }) => {

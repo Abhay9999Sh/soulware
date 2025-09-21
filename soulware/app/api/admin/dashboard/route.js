@@ -4,78 +4,8 @@ import dbConnect from "@/lib/mongoose";
 import { User, PeerPost, Appointment, QuizResult, CounselorProfile } from "@/lib/models";
 import mongoose from "mongoose";
 
-// --- AI Helper Function ---
-// This function calls the Gemini API to analyze text from posts and quizzes.
-async function getAIInsights(posts, quizzes) {
-  console.log("Attempting to generate AI insights from post and quiz data...");
-  if ((!posts || posts.length === 0) && (!quizzes || quizzes.length === 0)) {
-    return {
-      commonIssues: ["No recent activity"],
-      summary: "There is not enough recent data to generate an AI summary."
-    };
-  }
-
-  const apiKey = process.env.GEMINI_KEY;
-  if (!apiKey) {
-    console.error("Gemini API key is not configured.");
-    return {
-      commonIssues: ["Configuration Error"],
-      summary: "AI analysis is unavailable due to a missing API key."
-    };
-  }
-
-  // Combine post bodies and quiz answers into a single text block for analysis
-  const postText = posts.map(p => `Post: "${p.body}"`).join("\n");
-  const quizText = quizzes.map(q => 
-    `Quiz Result (Severity: ${q.severity}):\n${q.answers.map(a => `- ${a.question}: ${a.answer}`).join("\n")}`
-  ).join("\n\n");
-
-  const combinedText = `ANONYMOUS COMMUNITY POSTS:\n${postText}\n\nANONYMOUS QUIZ RESULTS:\n${quizText}`;
-
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-  const systemPrompt = `You are a psychological analyst for a student wellness platform. Your task is to analyze the following anonymous data from community posts and mental health quizzes (PHQ-9). Identify the most common underlying issues and provide a concise summary. Your response MUST be a valid JSON object with this exact structure:
-  {
-    "commonIssues": ["Issue 1", "Issue 2", "Issue 3"],
-    "summary": "A brief, one-paragraph summary explaining the key trends and potential concerns observed in the data."
-  }
-  RULES:
-  - The "commonIssues" array MUST contain the top 3-5 most prevalent psychological themes (e.g., "Academic Pressure", "Social Anxiety", "Symptoms of Depression").
-  - The summary MUST be professional, objective, and focus on trends, not individual cases.`;
-
-  const payload = {
-    contents: [{ parts: [{ text: combinedText }] }],
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          commonIssues: { type: "ARRAY", items: { type: "STRING" } },
-          summary: { type: "STRING" }
-        },
-      }
-    }
-  };
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
-    const result = await response.json();
-    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!jsonText) throw new Error("Invalid response from AI.");
-    return JSON.parse(jsonText);
-  } catch (error) {
-    console.error("Error calling Gemini API for analytics:", error);
-    return {
-      commonIssues: ["Analysis Error"],
-      summary: "Could not generate AI insights at this time due to a technical error."
-    };
-  }
-}
+// AI insights are now handled by a separate endpoint (/api/admin/ai-insights)
+// This improves dashboard loading performance by removing the slow AI generation
 
 // GET a comprehensive, anonymous analytics snapshot for the Admin Dashboard
 export async function GET() {
@@ -95,15 +25,13 @@ export async function GET() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // --- Perform all detailed analytics queries in parallel ---
+    // --- Perform all detailed analytics queries in parallel (AI insights removed for performance) ---
     const [
       keyMetrics,
       quizAnalysis,
       topCommunityTopics,
-      mostEngagingPosts,
-      appointmentTrend,
-      recentPostsForAI,
-      recentQuizzesForAI
+      nominatedPosts,
+      appointmentTrend
     ] = await Promise.all([
       // 1. Get Key Platform Metrics
       (async () => {
@@ -131,14 +59,14 @@ export async function GET() {
         { $project: { _id: 0, name: "$_id", value: "$count" } }
       ]),
 
-      // 4. Identify the Top 3 Most Engaging Posts
+      // 4. Get Nominated Posts for Admin Review (only posts nominated by volunteers)
       PeerPost.aggregate([
-        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $match: { isNominated: true, isWeeklyHighlight: { $ne: true } } }, // Only nominated posts that aren't already highlighted
         { $lookup: { from: "peercomments", localField: "_id", foreignField: "postId", as: "comments" }},
         { $addFields: { engagementScore: { $add: [{ $size: "$upvotes" }, { $size: "$comments" }] }}},
         { $sort: { engagementScore: -1 } },
-        { $limit: 3 },
-        { $project: { title: 1, body: { $substr: ["$body", 0, 100] }, engagementScore: 1, upvoteCount: { $size: "$upvotes" }, commentCount: { $size: "$comments" } } }
+        { $limit: 10 }, // Show up to 10 nominated posts
+        { $project: { title: 1, body: { $substr: ["$body", 0, 100] }, engagementScore: 1, upvoteCount: { $size: "$upvotes" }, commentCount: { $size: "$comments" }, createdAt: 1 } }
       ]),
 
       // 5. Track Appointment Booking Trends
@@ -146,26 +74,17 @@ export async function GET() {
         { $match: { createdAt: { $gte: thirtyDaysAgo } } },
         { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } }
-      ]).then(trend => trend.map(item => ({ date: item._id, appointments: item.count }))),
-      
-      // 6. Get recent post text for AI analysis
-      PeerPost.find({ createdAt: { $gte: thirtyDaysAgo } }, 'body').limit(50).lean(),
-      
-      // 7. Get recent quiz results for AI analysis
-      QuizResult.find({ createdAt: { $gte: thirtyDaysAgo } }, 'severity answers').limit(50).lean()
+      ]).then(trend => trend.map(item => ({ date: item._id, appointments: item.count })))
     ]);
 
-    // --- Generate AI Insights after fetching data ---
-    const aiAnalysis = await getAIInsights(recentPostsForAI, recentQuizzesForAI);
-
-    // Return the comprehensive analytics object
+    // Return the comprehensive analytics object (AI insights now loaded separately)
     return NextResponse.json({
       keyMetrics,
       quizAnalysis,
       topCommunityTopics,
-      mostEngagingPosts,
+      mostEngagingPosts: nominatedPosts, // Keep the same key for backward compatibility
       appointmentTrend,
-      aiAnalysis // Add the AI analysis to the response
+      loadedAt: new Date().toISOString()
     });
 
   } catch (error) {

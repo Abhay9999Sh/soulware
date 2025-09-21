@@ -99,26 +99,33 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
     const messagesEndRef = useRef(null);
     const router = useRouter();
     const typingTimeoutRef = useRef(null);
-
-    // Guard clause: Don't render if user is not available
-    if (!user || !conversation) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                    <p className="text-gray-500 dark:text-gray-400">Loading chat...</p>
-                </div>
-            </div>
-        );
-    }
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-    
-    const otherUser = conversation.participants?.find(p => p.clerkId !== user.id);
+    const [lastMessageCount, setLastMessageCount] = useState(0);
     
     // Get current user's role to determine display logic
     const [currentUserRole, setCurrentUserRole] = useState(null);
+
+    // Smooth scroll with intelligent delay based on message changes
+    useEffect(() => {
+        const scrollToBottom = () => {
+            if (messagesEndRef.current) {
+                const isNewMessage = messages.length > lastMessageCount;
+                const delay = isNewMessage ? 150 : 50; // Longer delay for new messages
+                
+                setTimeout(() => {
+                    messagesEndRef.current?.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'end',
+                        inline: 'nearest'
+                    });
+                }, delay);
+            }
+        };
+        
+        if (messages.length !== lastMessageCount) {
+            setLastMessageCount(messages.length);
+            scrollToBottom();
+        }
+    }, [messages, lastMessageCount]);
     
     useEffect(() => {
         const fetchUserRole = async () => {
@@ -132,6 +139,19 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
         };
         if (user) fetchUserRole();
     }, [user]);
+
+    // Guard clause: Don't render if user is not available (MOVED AFTER ALL HOOKS)
+    if (!user || !conversation) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <p className="text-gray-500 dark:text-gray-400">Loading chat...</p>
+                </div>
+            </div>
+        );
+    }
+    
+    const otherUser = conversation.participants?.find(p => p.clerkId !== user.id);
     
     // Display logic based on user role
     const getDisplayInfo = () => {
@@ -162,7 +182,7 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
         // Handle typing indicators
         if (socket && !isTyping) {
             setIsTyping(true);
-            socket.emit("typing", conversation._id);
+            socket.emit("typing", { room: conversation._id, userId: user?.id });
         }
         
         // Clear previous timeout
@@ -173,7 +193,7 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
         // Set new timeout to stop typing
         typingTimeoutRef.current = setTimeout(() => {
             if (socket) {
-                socket.emit("stop typing", conversation._id);
+                socket.emit("stop typing", { room: conversation._id, userId: user?.id });
                 setIsTyping(false);
             }
         }, 1000);
@@ -185,12 +205,16 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
         
         // Stop typing when sending message
         if (socket && isTyping) {
-            socket.emit("stop typing", conversation._id);
+            socket.emit("stop typing", { room: conversation._id, userId: user?.id });
             setIsTyping(false);
         }
         
-        onSendMessage(newMessage);
+        // Clear input immediately for responsive feel
+        const messageToSend = newMessage;
         setNewMessage('');
+        
+        // Send message after clearing input
+        onSendMessage(messageToSend);
     };
 
     return (
@@ -213,7 +237,14 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
                         <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => router.push('/counseling')}
+                            onClick={() => {
+                                // Navigate to appropriate dashboard based on user role
+                                if (currentUserRole === 'counselor') {
+                                    router.push('/dashboard/counselor'); // This should work with (main) route group
+                                } else {
+                                    router.push('/counseling');
+                                }
+                            }}
                             className="w-10 h-10 rounded-full glass border border-white/30 dark:border-gray-600/30 flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-white/20 dark:hover:bg-gray-800/20 transition-all duration-300"
                         >
                             <ArrowLeft className="w-5 h-5" />
@@ -246,15 +277,22 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
             </motion.header>
             
             {/* Messages Area - SCROLLABLE ONLY */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 scroll-smooth">
                 <AnimatePresence>
                     {messages.map((msg, index) => (
                         <motion.div
                             key={msg._id}
-                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            initial={{ opacity: 0, y: 15, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                            transition={{ 
+                                duration: 0.4, 
+                                delay: index * 0.02,
+                                ease: "easeOut",
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 25
+                            }}
                             className={`flex items-end gap-3 ${msg.senderId?.clerkId === user?.id ? 'justify-end' : 'justify-start'}`}
                         >
                             {msg.senderId?.clerkId !== user?.id && (
@@ -279,7 +317,7 @@ const ChatWindow = ({ conversation, messages, user, onSendMessage, socket, typin
                                         <p className={`text-xs ${
                                             msg.senderId?.clerkId === user?.id ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                                         }`}>
-                                            {new Date().toLocaleTimeString([], {
+                                            {new Date(msg.createdAt || msg.timestamp || Date.now()).toLocaleTimeString([], {
                                                 hour: '2-digit',
                                                 minute: '2-digit'
                                             })}
@@ -463,22 +501,31 @@ export default function ChatLayoutPage({ params }) {
         socket.on("message received", (newMessage) => {
             console.log("📨 New message received:", newMessage);
             setMessages(prev => {
-                // Avoid duplicates
-                const exists = prev.some(msg => msg._id === newMessage._id);
+                // Avoid duplicates by checking both _id and text+timestamp
+                const exists = prev.some(msg => 
+                    msg._id === newMessage._id || 
+                    (msg.text === newMessage.text && Math.abs(new Date(msg.createdAt) - new Date(newMessage.createdAt)) < 1000)
+                );
                 if (exists) return prev;
                 return [...prev, newMessage];
             });
         });
 
         // Listen for typing indicators
-        socket.on("typing", () => {
-            console.log("⌨️ Someone is typing...");
-            setTyping(true);
+        socket.on("typing", (typingUserId) => {
+            console.log("⌨️ Someone is typing...", typingUserId);
+            // Only show typing indicator if it's not the current user
+            if (typingUserId && typingUserId !== user?.id) {
+                setTyping(true);
+            }
         });
 
-        socket.on("stop typing", () => {
-            console.log("⌨️ Stopped typing");
-            setTyping(false);
+        socket.on("stop typing", (typingUserId) => {
+            console.log("⌨️ Stopped typing", typingUserId);
+            // Only hide typing indicator if it's not the current user
+            if (typingUserId && typingUserId !== user?.id) {
+                setTyping(false);
+            }
         });
 
         // Listen for session end

@@ -13,12 +13,39 @@ export default function CounselorDashboard() {
     const [chats, setChats] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("chats");
+    const [userRole, setUserRole] = useState(null);
+    const [roleError, setRoleError] = useState(null);
+
+    // Fetch user role and verify counselor access
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            if (!user) return;
+            try {
+                const userRes = await fetch('/api/users/me');
+                const userData = await userRes.json();
+                
+                console.log("👤 User role check:", userData);
+                
+                if (userData.role !== 'counselor') {
+                    setRoleError(`Access denied. Expected counselor role, but got: ${userData.role}`);
+                    return;
+                }
+                
+                setUserRole(userData.role);
+            } catch (error) {
+                console.error("❌ Error fetching user role:", error);
+                setRoleError("Failed to verify user role");
+            }
+        };
+        fetchUserRole();
+    }, [user]);
 
     // Fetch all necessary data for the counselor
     useEffect(() => {
         const fetchData = async () => {
-            if (!user) return;
+            if (!user || userRole !== 'counselor') return;
             try {
+                console.log("📊 Fetching counselor dashboard data...");
                 // Use Promise.all to fetch chats and bookings simultaneously
                 const [chatsRes, bookingsRes] = await Promise.all([
                     fetch('/api/chats'),
@@ -28,19 +55,21 @@ export default function CounselorDashboard() {
                 if (!chatsRes.ok) throw new Error('Failed to fetch chats');
                 const chatsData = await chatsRes.json();
                 setChats(chatsData);
+                console.log("💬 Chats loaded:", chatsData.length);
 
                 if (!bookingsRes.ok) throw new Error('Failed to fetch bookings');
                 const bookingsData = await bookingsRes.json();
                 setBookings(bookingsData);
+                console.log("📅 Bookings loaded:", bookingsData.length);
 
             } catch (error) {
-                console.error("Error fetching dashboard data:", error);
+                console.error("❌ Error fetching dashboard data:", error);
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [user]);
+    }, [user, userRole]);
 
     // Handle accepting/rejecting offline booking requests
     const handleStatusUpdate = async (bookingId, newStatus) => {
@@ -66,6 +95,30 @@ export default function CounselorDashboard() {
     const pendingRequests = bookings.filter((b) => b.status === "pending" && b.mode === "offline");
     const upcomingSessions = bookings.filter((b) => b.status === "confirmed" && b.mode === "offline");
 
+    // Show role error if access is denied
+    if (roleError) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-slate-900 dark:via-red-900 dark:to-orange-900 flex items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="glass-strong rounded-3xl p-8 shadow-2xl border border-red-200/50 dark:border-red-700/20 text-center max-w-md"
+                >
+                    <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">Access Denied</h2>
+                    <p className="text-red-600 dark:text-red-300 mb-4">{roleError}</p>
+                    <Link href="/" className="inline-block">
+                        <Button className="bg-red-600 hover:bg-red-700 text-white">
+                            Go to Home
+                        </Button>
+                    </Link>
+                </motion.div>
+            </div>
+        );
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50 dark:from-slate-900 dark:via-blue-900 dark:to-purple-900 flex items-center justify-center">
@@ -76,6 +129,7 @@ export default function CounselorDashboard() {
                 >
                     <Loader className="animate-spin w-8 h-8 mx-auto mb-4 text-blue-600" />
                     <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Loading Your Dashboard...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Verifying counselor access...</p>
                 </motion.div>
             </div>
         );

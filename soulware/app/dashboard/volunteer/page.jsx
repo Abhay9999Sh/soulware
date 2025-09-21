@@ -90,6 +90,7 @@ export default function VolunteerDashboard() {
 
   const handleNominatePost = async (postId) => {
       try {
+          console.log("🎯 Nominating post:", postId);
           const response = await fetch(`/api/community/posts/${postId}/nominate`, { 
               method: 'PATCH',
               headers: {
@@ -98,18 +99,25 @@ export default function VolunteerDashboard() {
           });
           
           if (response.ok) {
+              console.log("✅ Post nominated successfully");
               // Remove the post from the local list immediately for better UX
               setPositivePosts(prev => prev.filter(post => post._id !== postId));
               
-              // Optionally refresh the data to ensure consistency
+              // Show success feedback
+              alert("Post nominated successfully! It will now appear in the admin dashboard for review.");
+              
+              // Refresh the data to get new posts
               setTimeout(() => {
                   fetchData();
-              }, 1000);
+              }, 500);
           } else {
-              console.error('Failed to nominate post');
+              const errorData = await response.json();
+              console.error('Failed to nominate post:', errorData);
+              alert('Failed to nominate post. Please try again.');
           }
       } catch (error) {
           console.error('Error nominating post:', error);
+          alert('Error nominating post. Please check your connection and try again.');
       }
   };
 
@@ -239,8 +247,14 @@ export default function VolunteerDashboard() {
               <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/20">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
                   <Award className="w-6 h-6 text-yellow-600" />
-                  Nominate Posts for Highlight
+                  Nominate Posts for Weekly Highlight
                 </h2>
+                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>📋 Instructions:</strong> Review the top 10 most upvoted posts from this week. 
+                    Nominate the best ones for admin review. Once nominated, posts will appear in the admin dashboard for final approval as weekly highlights.
+                  </p>
+                </div>
                 {positivePosts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {positivePosts.map((post, index) => (
@@ -290,8 +304,9 @@ export default function VolunteerDashboard() {
                 ) : (
                   <div className="text-center py-12">
                     <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No posts ready for nomination</p>
-                    <p className="text-gray-400 text-sm">Great posts will appear here for you to highlight</p>
+                    <p className="text-gray-500 text-lg">No posts available for nomination</p>
+                    <p className="text-gray-400 text-sm">All top posts from this week have already been nominated or there are no posts yet.</p>
+                    <p className="text-gray-400 text-xs mt-2">Check back later or ask the admin to perform a weekly reset.</p>
                   </div>
                 )}
               </div>

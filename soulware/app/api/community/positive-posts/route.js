@@ -10,8 +10,9 @@ export async function GET() {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const positivePosts = await PeerPost.find({
-      // We only need to filter by the creation date
-      createdAt: { $gte: oneWeekAgo }
+      // Filter by creation date AND exclude already nominated posts
+      createdAt: { $gte: oneWeekAgo },
+      isNominated: { $ne: true } // Exclude posts that are already nominated
     })
     .sort({ 'upvotes.length': -1 }) // Correctly sort by the number of items in the upvotes array
     .limit(10)

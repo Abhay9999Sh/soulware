@@ -96,26 +96,118 @@ export default function AdminDashboard() {
   const { isLoaded, isSignedIn } = useUser();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
 
+  // Fetch main dashboard data (fast loading)
   useEffect(() => {
     const fetchData = async () => {
       if (!isLoaded || !isSignedIn) return;
       try {
+        console.log("🚀 Loading admin dashboard...");
         const res = await fetch("/api/admin/dashboard");
         const data = await res.json();
         if (res.ok) {
           setDashboardData(data);
+          console.log("✅ Dashboard data loaded successfully");
         } else {
           throw new Error(data.error || "Failed to fetch dashboard data");
         }
       } catch (err) {
-        console.error(err);
+        console.error("❌ Dashboard loading error:", err);
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, [isLoaded, isSignedIn]);
+
+  // Handle highlighting a post
+  const handleHighlightPost = async (postId) => {
+    try {
+      const response = await fetch(`/api/admin/posts/${postId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isWeeklyHighlight: true })
+      });
+      
+      if (response.ok) {
+        // Remove the highlighted post from the local list
+        setDashboardData(prev => ({
+          ...prev,
+          mostEngagingPosts: prev.mostEngagingPosts.filter(post => post._id !== postId)
+        }));
+        console.log("✅ Post highlighted successfully");
+      } else {
+        console.error('Failed to highlight post');
+      }
+    } catch (error) {
+      console.error('Error highlighting post:', error);
+    }
+  };
+
+  // Handle weekly reset
+  const handleWeeklyReset = async () => {
+    if (!confirm("Are you sure you want to reset all weekly highlights and nominations? This will clear all current nominations and highlights for a fresh week.")) {
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/admin/weekly-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Weekly reset completed! Updated ${data.updatedCount} posts.`);
+        // Refresh the dashboard data
+        window.location.reload();
+      } else {
+        console.error('Failed to perform weekly reset');
+        alert('Failed to perform weekly reset. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error performing weekly reset:', error);
+      alert('Error performing weekly reset. Please check your connection and try again.');
+    }
+  };
+
+  // Fetch AI insights separately (lazy loading)
+  useEffect(() => {
+    const fetchAiInsights = async () => {
+      if (!dashboardData) return; // Wait for main data to load first
+      
+      setAiLoading(true);
+      setAiError(null);
+      
+      try {
+        console.log("🤖 Loading AI insights...");
+        const res = await fetch("/api/admin/ai-insights");
+        const data = await res.json();
+        if (res.ok) {
+          setAiInsights(data.aiAnalysis);
+          console.log("✅ AI insights loaded successfully");
+        } else {
+          throw new Error(data.error || "Failed to fetch AI insights");
+        }
+      } catch (err) {
+        console.error("❌ AI insights loading error:", err);
+        setAiError(err.message);
+      } finally {
+        setAiLoading(false);
+      }
+    };
+
+    // Delay AI insights loading by 500ms to ensure smooth dashboard rendering
+    const timer = setTimeout(fetchAiInsights, 500);
+    return () => clearTimeout(timer);
+  }, [dashboardData]);
 
   if (!isLoaded || loading) {
     return (
@@ -190,6 +282,16 @@ export default function AdminDashboard() {
                     </button>
                   </Link>
                 </motion.div>
+                
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <button 
+                    onClick={handleWeeklyReset}
+                    className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-xl font-bold hover:from-amber-700 hover:to-orange-700 transition-all shadow-lg"
+                  >
+                    <Calendar className="w-5 h-5" />
+                    Weekly Reset
+                  </button>
+                </motion.div>
               </div>
             </div>
           </div>
@@ -248,9 +350,9 @@ export default function AdminDashboard() {
               <div className="p-6 border-b border-white/10 dark:border-gray-700/20">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
                   <Award className="w-5 h-5 text-amber-500" />
-                  Community Highlights
+                  Nominated Posts
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Volunteer nominations for review</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Posts nominated by volunteers for weekly highlight</p>
               </div>
               {dashboardData?.mostEngagingPosts?.length > 0 ? (
                 <div className="max-h-80 overflow-y-auto">
@@ -268,9 +370,10 @@ export default function AdminDashboard() {
                           <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{post.body.substring(0, 60)}...</p>
                         </div>
                         <motion.button
+                          onClick={() => handleHighlightPost(post._id)}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-xs font-bold shadow-lg flex items-center gap-1"
+                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-xs font-bold shadow-lg flex items-center gap-1 hover:from-amber-600 hover:to-orange-600 transition-all"
                         >
                           <Star className="w-3 h-3" />
                           Highlight
@@ -283,33 +386,108 @@ export default function AdminDashboard() {
                 <div className="p-6 text-center">
                   <Award className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm text-gray-500">No nominations pending</p>
+                  <p className="text-xs text-gray-400 mt-1">Volunteers haven't nominated any posts yet</p>
                 </div>
               )}
             </div>
 
 
-            {/* AI Insights Panel */}
+            {/* AI Insights Panel with Lazy Loading */}
             <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 p-6">
               <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3 mb-4">
                 <Sparkles className="w-5 h-5 text-purple-500" />
                 AI Insights
+                {aiLoading && (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Loader className="w-4 h-4 text-purple-500" />
+                  </motion.div>
+                )}
               </h2>
-              {dashboardData?.aiAnalysis ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {dashboardData.aiAnalysis.summary}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400">
-                    <Eye className="w-3 h-3" />
-                    <span>Generated from platform analytics</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">AI analysis in progress...</p>
-                </div>
-              )}
+              
+              <AnimatePresence mode="wait">
+                {aiInsights ? (
+                  <motion.div
+                    key="ai-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-3"
+                  >
+                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                      {aiInsights.summary}
+                    </p>
+                    {aiInsights.commonIssues && aiInsights.commonIssues.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Common Issues:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {aiInsights.commonIssues.map((issue, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium"
+                            >
+                              {issue}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400">
+                      <Eye className="w-3 h-3" />
+                      <span>Generated from platform analytics</span>
+                    </div>
+                  </motion.div>
+                ) : aiLoading ? (
+                  <motion.div
+                    key="ai-loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-4"
+                  >
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+                    </motion.div>
+                    <p className="text-sm text-gray-500">Generating AI insights...</p>
+                    <p className="text-xs text-gray-400 mt-1">This may take a few moments</p>
+                  </motion.div>
+                ) : aiError ? (
+                  <motion.div
+                    key="ai-error"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-4"
+                  >
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <span className="text-red-500 text-xl">⚠️</span>
+                    </div>
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-2">Failed to load AI insights</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      Retry
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="ai-waiting"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-4"
+                  >
+                    <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Waiting to load AI insights...</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
           </motion.div>

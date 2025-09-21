@@ -156,7 +156,14 @@ const CounselingPage = () => {
             const result = await res.json();
             if (!res.ok) throw new Error(result.error || "Failed to start chat.");
 
-            // On success, redirect to the chat page with the permanent conversation ID
+            // Show appropriate message based on whether it's a new or existing conversation
+            if (result.isNewConversation) {
+                console.log("New chat session created with", selectedCounselor.name);
+            } else {
+                console.log("Continuing existing chat with", selectedCounselor.name);
+            }
+
+            // On success, redirect to the chat page with the conversation ID
             router.push(`/chat/${result.conversationId}`);
 
         } catch (error) {
@@ -422,14 +429,14 @@ const CounselingPage = () => {
                                             >
                                                 <MessageCircle className="w-8 h-8 text-white" />
                                             </motion.div>
-                                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Start New Chat</h4>
-                                            <p className="text-gray-600 dark:text-gray-400 mb-4">Begin a new conversation session</p>
+                                            <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Chat Now</h4>
+                                            <p className="text-gray-600 dark:text-gray-400 mb-4">Continue or start your conversation</p>
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
                                                 className="w-full p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 btn-interactive"
                                             >
-                                                Start Conversation
+                                                Open Chat
                                             </motion.button>
                                         </motion.div>
 

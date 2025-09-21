@@ -38,20 +38,36 @@ export async function DELETE(req, { params }) {
 }
 
 
-// PATCH a post to clear the admin flag, keeping it in the community (Admin action)
+// PATCH a post to highlight it or clear admin flags (Admin action)
 export async function PATCH(req, { params }) {
     await dbConnect();
     try {
         const { userId: clerkId } = await auth();
         const { postId } = await params; // Await params in Next.js 15
+        const body = await req.json();
         
         if (!await isAdmin(clerkId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
+        let updateFields = {};
+        
+        // Handle different types of updates
+        if (body.isWeeklyHighlight !== undefined) {
+            // Highlighting a post for weekly highlight
+            updateFields = { 
+                isWeeklyHighlight: body.isWeeklyHighlight,
+                // When highlighting, we can also clear the nomination flag since it's been processed
+                isNominated: false 
+            };
+        } else {
+            // Default behavior: clear the admin flag
+            updateFields = { pushedToAdmin: false };
+        }
+
         const updatedPost = await PeerPost.findByIdAndUpdate(
             postId,
-            { $set: { pushedToAdmin: false } }, // Set the flag to false
+            { $set: updateFields },
             { new: true }
         );
 
@@ -59,6 +75,7 @@ export async function PATCH(req, { params }) {
             return NextResponse.json({ error: "Post not found" }, { status: 404 });
         }
         
+        console.log("✅ Post updated successfully:", updateFields);
         return NextResponse.json(updatedPost);
     } catch (error) {
         console.error('Failed to update post:', error);
