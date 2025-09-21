@@ -491,7 +491,7 @@ const AnxietyPage = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white text-white hover:bg-white hover:text-red-600 px-8 py-4 text-lg rounded-xl transition-all duration-300"
+                className="border-2 border-white text-black hover:bg-white hover:text-red-600 px-8 py-4 text-lg rounded-xl transition-all duration-300"
               >
                 Learn More
               </Button>
