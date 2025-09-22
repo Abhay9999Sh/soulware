@@ -87,7 +87,7 @@ const About = () => {
   ];
 
   const stats = [
-    { number: "10,000+", label: "Students Helped", icon: Users },
+    { number: "10+", label: "Students Helped", icon: Users },
     { number: "95%", label: "User Satisfaction", icon: Star },
     { number: "24/7", label: "Support Available", icon: Clock },
     { number: "100%", label: "Confidential", icon: Lock }
@@ -235,7 +235,7 @@ const About = () => {
               </blockquote>
               <div className="text-center">
                 <p className="font-semibold text-black dark:text-white">- The Soulware Team</p>
-                <p className="text-gray-800 dark:text-gray-100">Founded 2024</p>
+                <p className="text-gray-800 dark:text-gray-100">Founded 2025</p>
               </div>
             </motion.div>
           </div>

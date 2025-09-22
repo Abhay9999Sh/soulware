@@ -313,10 +313,10 @@ export default function AdminDashboard() {
           />
           <StatCard 
             icon={UserCheck} 
-            title="Active Counselors" 
+            title="Total Counselors" 
             value={dashboardData?.keyMetrics.activeCounselors ?? 0} 
             color="bg-gradient-to-r from-green-600 to-emerald-600"
-            description="Available professionals"
+            description="Registered professionals"
           />
           <StatCard 
             icon={Calendar} 

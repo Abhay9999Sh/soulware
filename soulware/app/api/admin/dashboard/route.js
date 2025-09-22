@@ -36,7 +36,7 @@ export async function GET() {
       // 1. Get Key Platform Metrics
       (async () => {
         const totalStudents = await User.countDocuments({ role: 'student' });
-        const activeCounselors = await CounselorProfile.countDocuments({ isVerified: true });
+        const activeCounselors = await User.countDocuments({ role: 'counselor' }); // Count ALL counselors, not just verified ones
         const totalAppointments = await Appointment.countDocuments();
         return { totalStudents, activeCounselors, totalAppointments };
       })(),
