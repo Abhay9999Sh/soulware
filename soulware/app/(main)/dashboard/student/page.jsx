@@ -694,8 +694,8 @@ export default function StudentDashboard() {
             </motion.div>
           </div>
 
-          {/* Action Cards Row */}
-          <div className="lg:col-span-6 grid grid-cols-1 gap-4">
+          {/* Action Cards - 2x2 Grid */}
+          <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ActionCard 
               icon={MessageCircle} 
               title="Find a Counselor" 
@@ -918,12 +918,13 @@ const ActionCard = ({ icon: Icon, title, description, onClick, color }) => {
     blue: "from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
     purple: "from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700",
     green: "from-green-500 to-green-600 hover:from-green-600 hover:to-green-700",
+    orange: "from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700",
   };
   
   return (
     <motion.button 
       onClick={onClick}
-      className={`w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-600/50 text-white text-left overflow-hidden relative group h-20`}
+      className={`w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-600/50 text-white text-left overflow-hidden relative group h-24`}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
