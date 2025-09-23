@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   const [cLoading, setCLoading] = useState(false)
   const [vLoading, setVLoading] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+  const [counselorRatings, setCounselorRatings] = useState({})
 
   // Prepare chart data with fallback for empty data
   const last7Days = useMemo(
@@ -84,7 +85,31 @@ export default function AdminDashboard() {
         const res = await fetch("/api/counselors", { cache: "no-store" })
         const data = await res.json()
         console.log('Counselors response:', { status: res.status, data });
-        if (res.ok) setCounselors(data.items || data || [])
+        if (res.ok) {
+          const counselorsList = data.items || data || [];
+          setCounselors(counselorsList);
+          
+          // Fetch ratings for each counselor
+          const ratingsPromises = counselorsList.map(async (counselor) => {
+            try {
+              const ratingRes = await fetch(`/api/ratings?counselorId=${counselor._id}`);
+              if (ratingRes.ok) {
+                const ratingData = await ratingRes.json();
+                return { counselorId: counselor._id, ...ratingData };
+              }
+            } catch (error) {
+              console.error(`Error fetching rating for counselor ${counselor._id}:`, error);
+            }
+            return { counselorId: counselor._id, averageRating: 0, totalRatings: 0 };
+          });
+          
+          const ratingsResults = await Promise.all(ratingsPromises);
+          const ratingsMap = {};
+          ratingsResults.forEach(rating => {
+            ratingsMap[rating.counselorId] = rating;
+          });
+          setCounselorRatings(ratingsMap);
+        }
         else throw new Error(data.error || "Failed to fetch counselors")
       } catch (e) {
         console.error("Fetch counselors error:", e)
@@ -341,7 +366,7 @@ export default function AdminDashboard() {
     )
   }
 
-  const PersonRow = ({ item, onDelete, deleting }) => {
+  const PersonRow = ({ item, onDelete, deleting, rating }) => {
     const joinedDate = item.createdAt
       ? new Intl.DateTimeFormat("en-US", {
           month: "short",
@@ -352,27 +377,28 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between p-4 border-b border-white/5 dark:border-gray-700/10 hover:bg-white/5 dark:hover:bg-gray-800/10 transition-colors">
         <div className="flex items-center gap-4 min-w-0">
           <UserCircle className="w-10 h-10 text-gray-400 dark:text-gray-500 shrink-0" />
-          <div className="min-w-0">
-            <p className="font-semibold text-sm text-gray-800 dark:text-white truncate">
-              {item.name}
-            </p>
-            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-              {item.email && (
-                <span className="inline-flex items-center gap-1.5 truncate">
-                  <Mail className="w-3 h-3" />
-                  <span className="truncate">{item.email}</span>
-                </span>
-              )}
-              {joinedDate && (
-                <>
-                  <span className="opacity-50">•</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3" />
-                    Joined {joinedDate}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                {item.name || "Unknown"}
+              </h3>
+              {rating && (
+                <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded-full">
+                  <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                  <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">
+                    {rating.averageRating > 0 ? rating.averageRating.toFixed(1) : 'New'}
+                    {rating.totalRatings > 0 && (
+                      <span className="ml-1 text-yellow-600 dark:text-yellow-400">
+                        ({rating.totalRatings})
+                      </span>
+                    )}
                   </span>
-                </>
+                </div>
               )}
             </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+              {item.qualification || "No qualification listed"} • Joined {joinedDate}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -734,6 +760,7 @@ export default function AdminDashboard() {
                       item={c}
                       onDelete={handleDeleteCounselor}
                       deleting={deletingId === c.userId}
+                      rating={counselorRatings[c._id]}
                     />
                   ))
               ) : (

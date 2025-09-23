@@ -4,6 +4,7 @@ import { SignIn } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Heart, Shield, Users, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useAuthRedirect } from "@/hooks/useAuthRedirect";
 
 // Darkened Dreamy Color Palette (matching homepage)
 const colors = {
@@ -14,6 +15,9 @@ const colors = {
 };
 
 const SignInPage = () => {
+  // Use the auth redirect hook to handle full page reloads
+  useAuthRedirect();
+
   return (
     <div className=" min-h-screen bg-gradient-to-br from-sky-50 via-pink-50 to-purple-50 dark:from-slate-900 dark:via-purple-900 dark:to-indigo-900 transition-all duration-1000">
       {/* Background Animations */}
@@ -233,6 +237,8 @@ const SignInPage = () => {
                     showOptionalFields: false,
                   },
                 }}
+                routing="hash"
+                forceRedirectUrl="/onboarding"
                 redirectUrl="/onboarding"
                 afterSignInUrl="/onboarding"
                 afterSignUpUrl="/onboarding"

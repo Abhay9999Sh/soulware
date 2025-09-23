@@ -110,13 +110,38 @@ const CounselingPage = () => {
     const [selectedCounselor, setSelectedCounselor] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [counselorRatings, setCounselorRatings] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const counselorsRes = await fetch("/api/counselors");
                 const counselorsData = await counselorsRes.json();
-                if (counselorsRes.ok) setCounselors(counselorsData.items || counselorsData || []);
+                if (counselorsRes.ok) {
+                    const counselorsList = counselorsData.items || counselorsData || [];
+                    setCounselors(counselorsList);
+                    
+                    // Fetch ratings for each counselor
+                    const ratingsPromises = counselorsList.map(async (counselor) => {
+                        try {
+                            const ratingRes = await fetch(`/api/ratings?counselorId=${counselor.userId}`);
+                            if (ratingRes.ok) {
+                                const ratingData = await ratingRes.json();
+                                return { counselorId: counselor.userId, ...ratingData };
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching rating for counselor ${counselor.userId}:`, error);
+                        }
+                        return { counselorId: counselor.userId, averageRating: 0, totalRatings: 0 };
+                    });
+                    
+                    const ratingsResults = await Promise.all(ratingsPromises);
+                    const ratingsMap = {};
+                    ratingsResults.forEach(rating => {
+                        ratingsMap[rating.counselorId] = rating;
+                    });
+                    setCounselorRatings(ratingsMap);
+                }
 
                 // This fetches only offline session bookings
                 const bookingsRes = await fetch("/api/bookings");
@@ -370,7 +395,17 @@ const CounselingPage = () => {
                                                 <p className="text-sm text-gray-600 dark:text-gray-400">{c.qualification}</p>
                                                 <div className="flex items-center justify-center mt-2">
                                                     <Star className="w-4 h-4 text-yellow-500 mr-1" />
-                                                    <span className="text-sm text-gray-600 dark:text-gray-400">4.9</span>
+                                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                        {counselorRatings[c.userId]?.averageRating > 0 
+                                                            ? counselorRatings[c.userId].averageRating.toFixed(1)
+                                                            : 'New'
+                                                        }
+                                                        {counselorRatings[c.userId]?.totalRatings > 0 && (
+                                                            <span className="text-xs ml-1">
+                                                                ({counselorRatings[c.userId].totalRatings})
+                                                            </span>
+                                                        )}
+                                                    </span>
                                                 </div>
                                             </div>
                                             {selectedCounselor?.userId === c.userId && (

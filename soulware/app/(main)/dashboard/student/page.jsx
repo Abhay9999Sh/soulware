@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import StudentQuizCheck from "@/components/StudentQuizCheck";
 import WellnessDashboard from "@/components/WellnessDashboard";
+import FeedbackModal from "@/components/FeedbackModal";
 // NEW: Import the chatbot component
 // import FloatingChatbot from "@/components/FloatingChatbot"; 
 import { 
@@ -171,6 +172,9 @@ export default function StudentDashboard() {
   const [selectedMood, setSelectedMood] = useState(null);
   const [quote, setQuote] = useState({ text: '', author: '' });
   const [loading, setLoading] = useState(true);
+  const [completedSessions, setCompletedSessions] = useState([]);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [currentSessionForFeedback, setCurrentSessionForFeedback] = useState(null);
   // State to control the chatbot is kept here
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
@@ -401,9 +405,58 @@ export default function StudentDashboard() {
             (b.status === 'pending' || b.status === 'confirmed')
         );
         setBookings(Array.isArray(upcomingOfflineBookings) ? upcomingOfflineBookings : []);
+        
+        // Check for completed sessions that need feedback
+        const completedBookings = data.filter(b => 
+            b.mode === 'offline' && 
+            b.status === 'completed'
+        );
+        setCompletedSessions(completedBookings);
+        
+        // Check if there's a recently completed session that needs feedback
+        const recentlyCompleted = completedBookings.find(b => {
+          const completedTime = new Date(b.updatedAt || b.createdAt);
+          const now = new Date();
+          const timeDiff = now - completedTime;
+          // Show feedback modal for sessions completed in the last 5 minutes
+          return timeDiff < 5 * 60 * 1000 && !b.hasRating;
+        });
+        
+        if (recentlyCompleted && !showFeedbackModal) {
+          setCurrentSessionForFeedback(recentlyCompleted);
+          setShowFeedbackModal(true);
+        }
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
+    }
+  };
+
+  const handleFeedbackSubmit = async (feedbackData) => {
+    try {
+      console.log('Submitting feedback:', feedbackData);
+      const response = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData),
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        console.log('Feedback submitted successfully');
+        // Refresh bookings to update the hasRating flag
+        await fetchBookings();
+      } else {
+        const error = await response.json();
+        console.error('API Error:', error);
+        throw new Error(error.error || 'Failed to submit feedback');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      throw error;
     }
   };
 
@@ -907,6 +960,14 @@ export default function StudentDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        appointment={currentSessionForFeedback}
+        onSubmit={handleFeedbackSubmit}
+      />
     </StudentQuizCheck>
   );
 }

@@ -15,6 +15,8 @@ export default function CounselorDashboard() {
     const [activeTab, setActiveTab] = useState("chats");
     const [userRole, setUserRole] = useState(null);
     const [roleError, setRoleError] = useState(null);
+    const [ratings, setRatings] = useState(null);
+    const [ratingsLoading, setRatingsLoading] = useState(false);
 
     // Fetch user role and verify counselor access
     useEffect(() => {
@@ -69,6 +71,33 @@ export default function CounselorDashboard() {
             }
         };
         fetchData();
+    }, [user, userRole]);
+
+    // Fetch counselor ratings
+    const fetchRatings = async () => {
+        if (!user || userRole !== 'counselor') return;
+        setRatingsLoading(true);
+        try {
+            // Get current user's ID from the database
+            const userRes = await fetch('/api/users/me');
+            const userData = await userRes.json();
+            
+            const ratingsRes = await fetch(`/api/ratings?counselorId=${userData._id}`);
+            if (ratingsRes.ok) {
+                const ratingsData = await ratingsRes.json();
+                setRatings(ratingsData);
+                console.log("⭐ Ratings loaded:", ratingsData);
+            }
+        } catch (error) {
+            console.error("❌ Error fetching ratings:", error);
+        } finally {
+            setRatingsLoading(false);
+        }
+    };
+
+    // Fetch ratings when user role is confirmed
+    useEffect(() => {
+        fetchRatings();
     }, [user, userRole]);
 
     // Handle accepting/rejecting offline booking requests
@@ -180,6 +209,16 @@ export default function CounselorDashboard() {
                                     <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{pendingRequests.length}</p>
                                     <p className="text-xs text-gray-500">Requests</p>
                                 </motion.div>
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    className="glass rounded-2xl p-4 text-center"
+                                >
+                                    <Star className="w-6 h-6 text-yellow-500 mx-auto mb-1" />
+                                    <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                        {ratings?.averageRating > 0 ? ratings.averageRating.toFixed(1) : 'New'}
+                                    </p>
+                                    <p className="text-xs text-gray-500">Rating</p>
+                                </motion.div>
                             </div>
                         </div>
                     </div>
@@ -196,7 +235,8 @@ export default function CounselorDashboard() {
                         {[
                             { id: "chats", icon: MessageCircle, label: "Student Chats", count: chats.length, color: "blue" },
                             { id: "requests", icon: Bell, label: "Booking Requests", count: pendingRequests.length, color: "orange" },
-                            { id: "upcoming", icon: Calendar, label: "Upcoming Sessions", count: upcomingSessions.length, color: "green" }
+                            { id: "upcoming", icon: Calendar, label: "Upcoming Sessions", count: upcomingSessions.length, color: "green" },
+                            { id: "ratings", icon: Star, label: "My Ratings", count: ratings?.totalRatings || 0, color: "yellow" }
                         ].map((tab) => (
                             <motion.button
                                 key={tab.id}
@@ -414,6 +454,136 @@ export default function CounselorDashboard() {
                                         <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                                         <p className="text-gray-500 text-lg">No upcoming sessions</p>
                                         <p className="text-gray-400 text-sm">Confirmed sessions will appear here</p>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'ratings' && (
+                        <motion.div
+                            key="ratings"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-6"
+                        >
+                            {/* Rating Overview */}
+                            <div className="glass-strong rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/20">
+                                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+                                    <Star className="w-6 h-6 text-yellow-500" />
+                                    My Ratings & Reviews
+                                </h2>
+                                
+                                {ratingsLoading ? (
+                                    <div className="text-center py-8">
+                                        <Loader className="animate-spin w-8 h-8 mx-auto mb-4 text-yellow-500" />
+                                        <p className="text-gray-500">Loading your ratings...</p>
+                                    </div>
+                                ) : ratings ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                        {/* Average Rating */}
+                                        <motion.div
+                                            whileHover={{ scale: 1.02 }}
+                                            className="glass rounded-xl p-6 text-center"
+                                        >
+                                            <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Star className="w-8 h-8 text-white fill-white" />
+                                            </div>
+                                            <p className="text-3xl font-bold text-gray-800 dark:text-white mb-1">
+                                                {ratings.averageRating > 0 ? ratings.averageRating.toFixed(1) : 'New'}
+                                            </p>
+                                            <p className="text-sm text-gray-500">Average Rating</p>
+                                        </motion.div>
+
+                                        {/* Total Reviews */}
+                                        <motion.div
+                                            whileHover={{ scale: 1.02 }}
+                                            className="glass rounded-xl p-6 text-center"
+                                        >
+                                            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Users className="w-8 h-8 text-white" />
+                                            </div>
+                                            <p className="text-3xl font-bold text-gray-800 dark:text-white mb-1">
+                                                {ratings.totalRatings}
+                                            </p>
+                                            <p className="text-sm text-gray-500">Total Reviews</p>
+                                        </motion.div>
+
+                                        {/* Performance */}
+                                        <motion.div
+                                            whileHover={{ scale: 1.02 }}
+                                            className="glass rounded-xl p-6 text-center"
+                                        >
+                                            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <TrendingUp className="w-8 h-8 text-white" />
+                                            </div>
+                                            <p className="text-3xl font-bold text-gray-800 dark:text-white mb-1">
+                                                {ratings.averageRating >= 4.5 ? 'Excellent' : 
+                                                 ratings.averageRating >= 4.0 ? 'Great' : 
+                                                 ratings.averageRating >= 3.5 ? 'Good' : 
+                                                 ratings.averageRating > 0 ? 'Fair' : 'New'}
+                                            </p>
+                                            <p className="text-sm text-gray-500">Performance</p>
+                                        </motion.div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                        <p className="text-gray-500 text-lg">No ratings yet</p>
+                                        <p className="text-gray-400 text-sm">Complete some sessions to receive ratings</p>
+                                    </div>
+                                )}
+
+                                {/* Recent Reviews */}
+                                {ratings?.ratings && ratings.ratings.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                                            <Heart className="w-5 h-5 text-pink-500" />
+                                            Recent Reviews
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {ratings.ratings.slice(0, 5).map((review, index) => (
+                                                <motion.div
+                                                    key={review._id}
+                                                    initial={{ opacity: 0, x: -20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: index * 0.1 }}
+                                                    className="glass rounded-xl p-4 hover:shadow-lg transition-all duration-300"
+                                                >
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center font-bold text-white text-sm">
+                                                            {review.studentId?.profile?.displayName?.charAt(0) || 'S'}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="flex">
+                                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                                        <Star
+                                                                            key={star}
+                                                                            className={`w-4 h-4 ${
+                                                                                star <= review.rating
+                                                                                    ? 'text-yellow-400 fill-yellow-400'
+                                                                                    : 'text-gray-300'
+                                                                            }`}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <span className="text-sm text-gray-500">
+                                                                    {new Date(review.createdAt).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                            {review.feedback && (
+                                                                <p className="text-gray-700 dark:text-gray-300 text-sm">
+                                                                    "{review.feedback}"
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
