@@ -116,7 +116,7 @@ const CounselingPage = () => {
             try {
                 const counselorsRes = await fetch("/api/counselors");
                 const counselorsData = await counselorsRes.json();
-                if (counselorsRes.ok) setCounselors(counselorsData);
+                if (counselorsRes.ok) setCounselors(counselorsData.items || counselorsData || []);
 
                 // This fetches only offline session bookings
                 const bookingsRes = await fetch("/api/bookings");
@@ -334,7 +334,7 @@ const CounselingPage = () => {
                             </div>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                {counselors.map((c, index) => (
+                                {Array.isArray(counselors) && counselors.length > 0 ? counselors.map((c, index) => (
                                     <motion.div
                                         key={c.userId}
                                         initial={{ opacity: 0, y: 20 }}
@@ -350,13 +350,13 @@ const CounselingPage = () => {
                                         }`}
                                     >
                                         <div className="flex flex-col items-center text-center space-y-4">
-                                            <motion.div 
-                                                className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl transition-all duration-300 ${
+                                            <motion.div
+                                                className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl ${
                                                     selectedCounselor?.userId === c.userId 
-                                                        ? 'bg-gradient-to-r from-green-500 to-blue-500' 
-                                                        : 'bg-gray-200 dark:bg-gray-700'
+                                                        ? 'bg-green-500' 
+                                                        : 'bg-gradient-to-r from-blue-500 to-green-500'
                                                 }`}
-                                                animate={selectedCounselor?.userId === c.userId ? { scale: [1, 1.1, 1] } : {}}
+                                                animate={{ scale: selectedCounselor?.userId === c.userId ? [1, 1.1, 1] : 1 }}
                                                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                                             >
                                                 {selectedCounselor?.userId === c.userId ? (
@@ -384,7 +384,21 @@ const CounselingPage = () => {
                                             )}
                                         </div>
                                     </motion.div>
-                                ))}
+                                )) : (
+                                    <div className="col-span-full text-center py-12">
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="glass rounded-2xl p-8"
+                                        >
+                                            <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">No Counselors Available</h3>
+                                            <p className="text-gray-600 dark:text-gray-400">
+                                                Our counselors are currently unavailable. Please try again later or contact support.
+                                            </p>
+                                        </motion.div>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
 
