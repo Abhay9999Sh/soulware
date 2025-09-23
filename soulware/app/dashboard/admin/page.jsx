@@ -563,29 +563,154 @@ export default function AdminDashboard() {
           />
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Analytics Section */}
+        {/* Enhanced Dashboard Grid */}
+        <div className="grid grid-cols-1  gap-8 mb-8">
+          {/* Main Analytics - Takes 3 columns */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-2"
+            className="xl:col-span-3"
           >
             <AnalyticsChart data={chartData} />
           </motion.div>
 
-          {/* Sidebar Section */}
+          
+        </div>
+
+        {/* Secondary Grid - AI Insights and Nominations */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* AI Insights Panel */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="lg:col-span-1 space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
           >
-            {/* Nominations Panel */}
-            <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20">
+            <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 p-6 h-full">
+              <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3 mb-4">
+                <Sparkles className="w-5 h-5 text-blue-500" />
+                AI Insights
+                {aiLoading && (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                  >
+                    <Loader className="w-4 h-4 text-blue-500" />
+                  </motion.div>
+                )}
+              </h2>
+              <AnimatePresence mode="wait">
+                {aiInsights ? (
+                  <motion.div
+                    key="ai-content"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-4"
+                  >
+                    {/* Summary Section */}
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-700/50">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {aiInsights.summary}
+                      </p>
+                    </div>
+                    
+                    {/* Common Issues Section */}
+                    {aiInsights.commonIssues?.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Common Issues Identified:
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {aiInsights.commonIssues.map((issue, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200/50 dark:border-purple-700/50 rounded-lg p-3 text-center"
+                            >
+                              <span className="text-xs font-medium text-purple-700 dark:text-purple-300 block">
+                                {issue}
+                              </span>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ) : aiLoading ? (
+                  <motion.div
+                    key="ai-loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-8"
+                  >
+                    <motion.div
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <Sparkles className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+                    </motion.div>
+                    <p className="text-sm text-gray-500">
+                      Generating AI insights...
+                    </p>
+                  </motion.div>
+                ) : aiError ? (
+                  <motion.div
+                    key="ai-error"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-8"
+                  >
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <span className="text-red-500 text-xl">⚠️</span>
+                    </div>
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      Failed to load insights
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="ai-waiting"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-8"
+                  >
+                    <Sparkles className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">
+                      Waiting for data to load...
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
+          {/* Nominations Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 h-full">
               <div className="p-6 border-b border-white/10 dark:border-gray-700/20">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-                  <Award className="w-5 h-5 text-amber-500" />
+                  <Award className="w-5 h-5 text-pink-500" />
                   Nominated Posts
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -615,7 +740,7 @@ export default function AdminDashboard() {
                           onClick={() => handleHighlightPost(post._id)}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full text-xs font-bold shadow-lg flex items-center gap-1 hover:from-amber-600 hover:to-orange-600 transition-all"
+                          className="px-3 py-1 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-full text-xs font-bold shadow-lg flex items-center gap-1 hover:from-pink-600 hover:to-orange-600 transition-all"
                         >
                           <Star className="w-3 h-3" />
                           Highlight
@@ -633,112 +758,72 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-
-            {/* AI Insights Panel */}
-            <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 p-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3 mb-4">
-                <Sparkles className="w-5 h-5 text-purple-500" />
-                AI Insights
-                {aiLoading && (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                  >
-                    <Loader className="w-4 h-4 text-purple-500" />
-                  </motion.div>
-                )}
-              </h2>
-              <AnimatePresence mode="wait">
-                {aiInsights ? (
-                  <motion.div
-                    key="ai-content"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-3"
-                  >
-                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                      {aiInsights.summary}
-                    </p>
-                    {aiInsights.commonIssues?.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                          Common Issues:
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {aiInsights.commonIssues.map((issue, index) => (
-                            <span
-                              key={index}
-                              className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium"
-                            >
-                              {issue}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                ) : aiLoading ? (
-                  <motion.div
-                    key="ai-loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-4"
-                  >
-                    <motion.div
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                    </motion.div>
-                    <p className="text-sm text-gray-500">
-                      Generating AI insights...
-                    </p>
-                  </motion.div>
-                ) : aiError ? (
-                  <motion.div
-                    key="ai-error"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-4"
-                  >
-                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <span className="text-red-500 text-xl">⚠️</span>
-                    </div>
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      Failed to load insights
-                    </p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="ai-waiting"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-4"
-                  >
-                    <Sparkles className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">
-                      Waiting for data to load...
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
           </motion.div>
         </div>
 
-        {/* Beautiful Lists Section */}
+        {/* System Status Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        >
+          <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">System Health</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">All systems operational</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-green-600 dark:text-green-400 font-medium">Online</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">Database</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Connection stable</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center">
+                <BarChart2 className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Connected</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">AI Services</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Gemini API active</p>
+              </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">Active</span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* User Management Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 overflow-hidden">
             <div className="p-6 border-b border-white/10 dark:border-gray-700/20 flex items-center justify-between">
@@ -778,7 +863,7 @@ export default function AdminDashboard() {
           <div className="bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 overflow-hidden">
             <div className="p-6 border-b border-white/10 dark:border-gray-700/20 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
-                <Shield className="w-5 h-5 text-sky-500" /> All Volunteers
+                <Shield className="w-5 h-5 text-pink-500" /> All Volunteers
               </h2>
             </div>
             <div className="max-h-[28rem] overflow-y-auto">

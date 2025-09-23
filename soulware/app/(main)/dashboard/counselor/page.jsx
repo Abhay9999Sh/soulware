@@ -25,14 +25,14 @@ export default function CounselorDashboard() {
             try {
                 const userRes = await fetch('/api/users/me');
                 const userData = await userRes.json();
-                
+
                 console.log("👤 User role check:", userData);
-                
+
                 if (userData.role !== 'counselor') {
                     setRoleError(`Access denied. Expected counselor role, but got: ${userData.role}`);
                     return;
                 }
-                
+
                 setUserRole(userData.role);
             } catch (error) {
                 console.error("❌ Error fetching user role:", error);
@@ -81,7 +81,7 @@ export default function CounselorDashboard() {
             // Get current user's ID from the database
             const userRes = await fetch('/api/users/me');
             const userData = await userRes.json();
-            
+
             const ratingsRes = await fetch(`/api/ratings?counselorId=${userData._id}`);
             if (ratingsRes.ok) {
                 const ratingsData = await ratingsRes.json();
@@ -120,7 +120,7 @@ export default function CounselorDashboard() {
             console.error("Error updating booking:", error);
         }
     };
-    
+
     const pendingRequests = bookings.filter((b) => b.status === "pending" && b.mode === "offline");
     const upcomingSessions = bookings.filter((b) => b.status === "confirmed" && b.mode === "offline");
 
@@ -236,24 +236,22 @@ export default function CounselorDashboard() {
                             { id: "chats", icon: MessageCircle, label: "Student Chats", count: chats.length, color: "blue" },
                             { id: "requests", icon: Bell, label: "Booking Requests", count: pendingRequests.length, color: "orange" },
                             { id: "upcoming", icon: Calendar, label: "Upcoming Sessions", count: upcomingSessions.length, color: "green" },
-                            { id: "ratings", icon: Star, label: "My Ratings", count: ratings?.totalRatings || 0, color: "yellow" }
+                            { id: "ratings", icon: Star, label: "My Ratings", count: ratings?.totalRatings || 0, color: "purple" }
                         ].map((tab) => (
                             <motion.button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                className={`flex items-center gap-3 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${
-                                    activeTab === tab.id
+                                className={`flex items-center gap-3 py-3 px-6 rounded-xl font-medium transition-all duration-300 ${activeTab === tab.id
                                         ? `bg-gradient-to-r from-${tab.color}-500 to-${tab.color}-600 text-white shadow-lg`
                                         : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-800/50'
-                                }`}
+                                    }`}
                             >
                                 <tab.icon size={20} />
                                 <span className="hidden sm:inline">{tab.label}</span>
-                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                    activeTab === tab.id ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                                }`}>
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${activeTab === tab.id ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                                    }`}>
                                     {tab.count}
                                 </span>
                             </motion.button>
@@ -296,7 +294,7 @@ export default function CounselorDashboard() {
                                                                 <div className="flex justify-between items-start">
                                                                     <p className="font-bold text-gray-800 dark:text-white">{chat.studentName || 'Student'}</p>
                                                                     <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                                                                        {new Date(chat.lastMessageAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                                        {new Date(chat.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                     </p>
                                                                 </div>
                                                                 <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-1">{chat.lastMessage}</p>
@@ -359,9 +357,9 @@ export default function CounselorDashboard() {
                                                     </div>
                                                     <div className="flex gap-3">
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                            <Button 
-                                                                onClick={() => handleStatusUpdate(booking._id, "rejected")} 
-                                                                variant="destructive" 
+                                                            <Button
+                                                                onClick={() => handleStatusUpdate(booking._id, "rejected")}
+                                                                variant="destructive"
                                                                 size="sm"
                                                                 className="flex items-center gap-2"
                                                             >
@@ -370,8 +368,8 @@ export default function CounselorDashboard() {
                                                             </Button>
                                                         </motion.div>
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                            <Button 
-                                                                onClick={() => handleStatusUpdate(booking._id, "confirmed")} 
+                                                            <Button
+                                                                onClick={() => handleStatusUpdate(booking._id, "confirmed")}
                                                                 size="sm"
                                                                 className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
                                                             >
@@ -394,7 +392,7 @@ export default function CounselorDashboard() {
                             </div>
                         </motion.div>
                     )}
-                    
+
                     {activeTab === 'upcoming' && (
                         <motion.div
                             key="upcoming"
@@ -435,9 +433,9 @@ export default function CounselorDashboard() {
                                                         </div>
                                                     </div>
                                                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <Button 
-                                                            onClick={() => handleStatusUpdate(booking._id, "completed")} 
-                                                            variant="outline" 
+                                                        <Button
+                                                            onClick={() => handleStatusUpdate(booking._id, "completed")}
+                                                            variant="outline"
                                                             size="sm"
                                                             className="flex items-center gap-2 border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
                                                         >
@@ -475,7 +473,7 @@ export default function CounselorDashboard() {
                                     <Star className="w-6 h-6 text-yellow-500" />
                                     My Ratings & Reviews
                                 </h2>
-                                
+
                                 {ratingsLoading ? (
                                     <div className="text-center py-8">
                                         <Loader className="animate-spin w-8 h-8 mx-auto mb-4 text-yellow-500" />
@@ -520,10 +518,10 @@ export default function CounselorDashboard() {
                                                 <TrendingUp className="w-8 h-8 text-white" />
                                             </div>
                                             <p className="text-3xl font-bold text-gray-800 dark:text-white mb-1">
-                                                {ratings.averageRating >= 4.5 ? 'Excellent' : 
-                                                 ratings.averageRating >= 4.0 ? 'Great' : 
-                                                 ratings.averageRating >= 3.5 ? 'Good' : 
-                                                 ratings.averageRating > 0 ? 'Fair' : 'New'}
+                                                {ratings.averageRating >= 4.5 ? 'Excellent' :
+                                                    ratings.averageRating >= 4.0 ? 'Great' :
+                                                        ratings.averageRating >= 3.5 ? 'Good' :
+                                                            ratings.averageRating > 0 ? 'Fair' : 'New'}
                                             </p>
                                             <p className="text-sm text-gray-500">Performance</p>
                                         </motion.div>
@@ -562,11 +560,10 @@ export default function CounselorDashboard() {
                                                                     {[1, 2, 3, 4, 5].map((star) => (
                                                                         <Star
                                                                             key={star}
-                                                                            className={`w-4 h-4 ${
-                                                                                star <= review.rating
+                                                                            className={`w-4 h-4 ${star <= review.rating
                                                                                     ? 'text-yellow-400 fill-yellow-400'
                                                                                     : 'text-gray-300'
-                                                                            }`}
+                                                                                }`}
                                                                         />
                                                                     ))}
                                                                 </div>
