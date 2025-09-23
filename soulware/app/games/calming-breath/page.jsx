@@ -33,9 +33,9 @@ const CalmingBreathGame = () => {
   
   // Breathing Timing (scientifically proven 4-7-8 technique)
   const breathingCycle = {
-    inhale: 4,    // 4 seconds
-    hold: 7,      // 7 seconds  
-    exhale: 8     // 8 seconds
+    inhale: 6,    // 4 seconds
+    hold: 4,      // 7 seconds  
+    exhale: 5     // 8 seconds
   };
   
   // Customizable settings
