@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import { User, QuizResult } from "@/lib/models";
 import { auth } from "@clerk/nextjs/server";
+import { normalizeScore } from "@/lib/questionnaires";
 
 // POST a new quiz result
 export async function POST(req) {
@@ -18,16 +19,26 @@ export async function POST(req) {
       return NextResponse.json({ error: "User not found in database" }, { status: 404 });
     }
 
-    // Get the quiz data from the request body
-    const { score, severity, answers, quizType } = await req.json();
+    // Get the comprehensive quiz data from the request body
+    const { quizType, domainResults, wellnessScore, flags, answers, score, severity } = await req.json();
 
-    // Create a new quiz result document
+    // Calculate normalized scores for domain results
+    const enhancedDomainResults = domainResults ? domainResults.map(result => ({
+      ...result,
+      normalizedScore: normalizeScore(result)
+    })) : [];
+
+    // Create a new quiz result document with comprehensive data
     const newQuizResult = new QuizResult({
-      userId: user._id, // Use the user's MongoDB ObjectId
-      score,
-      severity,
-      answers,
-      quizType,
+      userId: user._id,
+      quizType: quizType || 'PHQ-9',
+      wellnessScore,
+      domainResults: enhancedDomainResults,
+      flags: flags || [],
+      answers: answers || [],
+      // Legacy fields for backward compatibility
+      score: score || (domainResults && domainResults[0] ? domainResults[0].rawScore : 0),
+      severity: severity || (domainResults && domainResults[0] ? domainResults[0].severity : 'Unknown')
     });
 
     // Save the result to the database

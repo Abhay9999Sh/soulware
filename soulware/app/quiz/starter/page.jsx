@@ -1,9 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { useUser } from "@clerk/nextjs"; // Using the real Clerk hook
-import { Brain, Target, Sparkles, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
+import { Brain, Target, Sparkles, Check, Clock, Zap, Activity, Heart } from "lucide-react";
+import { QUESTIONNAIRES, QUIZ_TYPES, calculateDomainScore, normalizeScore, calculateWellnessScore, flagHighRiskDomains } from "@/lib/questionnaires";
 
 // A simple placeholder for your ProtectedRoute component
 const ProtectedRoute = ({ children }) => {
@@ -12,47 +14,65 @@ const ProtectedRoute = ({ children }) => {
 };
 
 
-// --- A complete, self-contained PHQ-9 Quiz Component ---
+// --- Comprehensive Multi-Questionnaire Quiz Component ---
 
-const PHQ9Quiz = ({ onComplete }) => {
-  const questions = [
-    "Little interest or pleasure in doing things",
-    "Feeling down, depressed, or hopeless",
-    "Trouble falling or staying asleep, or sleeping too much",
-    "Feeling tired or having little energy",
-    "Poor appetite or overeating",
-    "Feeling bad about yourself — or that you are a failure or have let yourself or your family down",
-    "Trouble concentrating on things, such as reading the newspaper or watching television",
-    "Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual",
-    "Thoughts that you would be better off dead or of hurting yourself in some way",
-  ];
+const ComprehensiveQuiz = ({ quizType, onComplete }) => {
+  const questionnaires = quizType.questionnaires.map(id => ({ id, ...QUESTIONNAIRES[id] }));
+  const allQuestions = [];
+  const questionMap = [];
+  
+  // Build flat question list with mapping
+  questionnaires.forEach((questionnaire, qIndex) => {
+    questionnaire.questions.forEach((question, questionIndex) => {
+      allQuestions.push({
+        text: question,
+        questionnaire: questionnaire.id,
+        questionnaireIndex: qIndex,
+        questionIndex,
+        timeframe: questionnaire.timeframe,
+        responseScale: questionnaire.responseScale
+      });
+      questionMap.push({ questionnaire: questionnaire.id, questionIndex });
+    });
+  });
 
-  const options = [
-    { label: "Not at all", value: 0 },
-    { label: "Several days", value: 1 },
-    { label: "More than half the days", value: 2 },
-    { label: "Nearly every day", value: 3 },
-  ];
-
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
+  const [answers, setAnswers] = useState(Array(allQuestions.length).fill(null));
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
   const calculateResults = (finalAnswers) => {
-    const totalScore = finalAnswers.reduce((sum, val) => sum + (val || 0), 0);
-    let severity = "None";
-    if (totalScore >= 20) severity = "Severe";
-    else if (totalScore >= 15) severity = "Moderately Severe";
-    else if (totalScore >= 10) severity = "Moderate";
-    else if (totalScore >= 5) severity = "Mild";
+    // Group answers by questionnaire
+    const answersByQuestionnaire = {};
+    questionnaires.forEach(q => {
+      answersByQuestionnaire[q.id] = [];
+    });
+    
+    finalAnswers.forEach((answer, index) => {
+      const mapping = questionMap[index];
+      answersByQuestionnaire[mapping.questionnaire].push(answer || 0);
+    });
 
-    const detailedAnswers = questions.map((q, i) => ({
-        question: q,
-        answer: finalAnswers[i]
+    // Calculate domain scores
+    const domainResults = questionnaires.map(q => 
+      calculateDomainScore(q.id, answersByQuestionnaire[q.id])
+    ).filter(Boolean);
+
+    // Calculate overall wellness score
+    const wellnessScore = calculateWellnessScore(domainResults);
+    
+    // Flag high-risk domains
+    const flags = flagHighRiskDomains(domainResults);
+
+    // Prepare detailed answers
+    const detailedAnswers = allQuestions.map((q, i) => ({
+      questionnaire: q.questionnaire,
+      question: q.text,
+      answer: finalAnswers[i]
     }));
     
     onComplete({
-      score: totalScore,
-      severity: severity,
+      domainResults,
+      wellnessScore,
+      flags,
       answers: detailedAnswers
     });
   };
@@ -62,113 +82,112 @@ const PHQ9Quiz = ({ onComplete }) => {
     newAnswers[questionIndex] = value;
     setAnswers(newAnswers);
 
-    // After an answer is selected, decide what to do next
     setTimeout(() => {
-        if (currentQuestion < questions.length - 1) {
-            // If it's not the last question, move to the next one
-            setCurrentQuestion(currentQuestion + 1);
-        } else {
-            // If it IS the last question, calculate and submit the results
-            calculateResults(newAnswers);
-        }
+      if (currentQuestion < allQuestions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+      } else {
+        calculateResults(newAnswers);
+      }
     }, 300);
   };
+
+  const currentQ = allQuestions[currentQuestion];
 
   return (
     <div className="max-w-4xl mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-3xl p-8 md:p-10 shadow-2xl border border-gray-200/50 dark:border-gray-600/50">
       <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <motion.p 
-              className="text-sm font-semibold text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 px-4 py-2 rounded-full"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              Question {currentQuestion + 1} of {questions.length}
-            </motion.p>
-            <motion.div 
-              className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50 px-4 py-2 rounded-full"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {Math.round(((currentQuestion + 1) / questions.length) * 100)}% Complete
-            </motion.div>
-          </div>
-          <div className="w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-full h-3 shadow-inner">
-            <motion.div 
-                className="bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 h-3 rounded-full shadow-lg"
-                initial={{ width: 0 }}
-                animate={{ width: `${((currentQuestion + 1) / questions.length) * 100}%`}}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-            />
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <motion.p 
+            className="text-sm font-semibold text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/30 px-4 py-2 rounded-full"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            Question {currentQuestion + 1} of {allQuestions.length}
+          </motion.p>
+          <motion.div 
+            className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50 px-4 py-2 rounded-full"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {Math.round(((currentQuestion + 1) / allQuestions.length) * 100)}% Complete
+          </motion.div>
+        </div>
+        <div className="w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 rounded-full h-3 shadow-inner">
+          <motion.div 
+            className="bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 h-3 rounded-full shadow-lg"
+            initial={{ width: 0 }}
+            animate={{ width: `${((currentQuestion + 1) / allQuestions.length) * 100}%`}}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          />
+        </div>
       </div>
       
       <AnimatePresence mode="wait">
         <motion.div
-            key={currentQuestion}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.4 }}
+          key={currentQuestion}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          transition={{ duration: 0.4 }}
         >
-            <div className="text-center mb-8">
-              <motion.h2 
-                className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-white mb-4 leading-relaxed"
+          <div className="text-center mb-8">
+            <motion.h2 
+              className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-white mb-4 leading-relaxed"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              {currentQ.timeframe}, how often have you experienced:
+            </motion.h2>
+            <motion.div 
+              className="bg-gradient-to-r from-sky-100 via-pink-100 to-purple-100 dark:from-sky-900/30 dark:via-pink-900/30 dark:to-purple-900/30 rounded-2xl p-6 mb-8"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <p className="text-lg md:text-xl font-medium text-gray-700 dark:text-gray-200 italic">
+                "{currentQ.text}"
+              </p>
+            </motion.div>
+          </div>
+          
+          <div className="grid gap-4">
+            {currentQ.responseScale.map((option, optionIndex) => (
+              <motion.button
+                key={optionIndex}
+                onClick={() => handleAnswer(currentQuestion, option.value)}
+                className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group ${
+                  answers[currentQuestion] === option.value 
+                    ? 'bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 border-transparent text-white font-semibold shadow-lg' 
+                    : 'bg-white/70 dark:bg-gray-700/70 border-gray-200/50 dark:border-gray-600/50 hover:border-sky-300 dark:hover:border-sky-500 hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg'
+                }`}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: 0.3, delay: 0.3 + (optionIndex * 0.1) }}
               >
-                Over the last 2 weeks, how often have you been bothered by:
-              </motion.h2>
-              <motion.div 
-                className="bg-gradient-to-r from-sky-100 via-pink-100 to-purple-100 dark:from-sky-900/30 dark:via-pink-900/30 dark:to-purple-900/30 rounded-2xl p-6 mb-8"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <p className="text-lg md:text-xl font-medium text-gray-700 dark:text-gray-200 italic">
-                  "{questions[currentQuestion]}"
-                </p>
-              </motion.div>
-            </div>
-            
-            <div className="grid gap-4">
-                {options.map((option, optionIndex) => (
-                    <motion.button
-                        key={optionIndex}
-                        onClick={() => handleAnswer(currentQuestion, option.value)}
-                        className={`w-full text-left p-6 rounded-2xl border-2 transition-all duration-300 flex items-center justify-between group ${
-                          answers[currentQuestion] === option.value 
-                            ? 'bg-gradient-to-r from-sky-500 via-pink-500 to-purple-500 border-transparent text-white font-semibold shadow-lg' 
-                            : 'bg-white/70 dark:bg-gray-700/70 border-gray-200/50 dark:border-gray-600/50 hover:border-sky-300 dark:hover:border-sky-500 hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg'
-                        }`}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.3 + (optionIndex * 0.1) }}
-                    >
-                        <span className={`text-base md:text-lg ${
-                          answers[currentQuestion] === option.value 
-                            ? 'text-white' 
-                            : 'text-gray-700 dark:text-gray-200 group-hover:text-gray-800 dark:group-hover:text-white'
-                        }`}>
-                          {option.label}
-                        </span>
-                        {answers[currentQuestion] === option.value && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <Check className="w-6 h-6 text-white" />
-                          </motion.div>
-                        )}
-                    </motion.button>
-                ))}
-            </div>
+                <span className={`text-base md:text-lg ${
+                  answers[currentQuestion] === option.value 
+                    ? 'text-white' 
+                    : 'text-gray-700 dark:text-gray-200 group-hover:text-gray-800 dark:group-hover:text-white'
+                }`}>
+                  {option.label}
+                </span>
+                {answers[currentQuestion] === option.value && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Check className="w-6 h-6 text-white" />
+                  </motion.div>
+                )}
+              </motion.button>
+            ))}
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>
@@ -178,27 +197,35 @@ const PHQ9Quiz = ({ onComplete }) => {
 
 const StarterQuizPage = () => {
   const { user } = useUser();
+  const searchParams = useSearchParams();
   const [quizCompleted, setQuizCompleted] = useState(false);
+  const [selectedQuizType, setSelectedQuizType] = useState(null);
+  const [showQuizSelection, setShowQuizSelection] = useState(true);
+  const [returnTo, setReturnTo] = useState(null);
 
-  // Get the return URL from query parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const returnTo = urlParams.get('returnTo');
+  // Get the return URL from query parameters safely
+  useEffect(() => {
+    if (searchParams) {
+      setReturnTo(searchParams.get('returnTo'));
+    }
+  }, [searchParams]);
 
   const handleQuizComplete = async (quizResult) => {
-    console.log("Starter quiz completed:", quizResult);
+    console.log("Quiz completed:", quizResult);
     
     try {
-      // Send the quiz result to your backend API route
+      // Send the comprehensive quiz result to backend
       const response = await fetch('/api/quiz/results', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          score: quizResult.score,
-          severity: quizResult.severity,
-          answers: quizResult.answers,
-          quizType: 'PHQ-9'
+          quizType: selectedQuizType.id,
+          domainResults: quizResult.domainResults,
+          wellnessScore: quizResult.wellnessScore,
+          flags: quizResult.flags,
+          answers: quizResult.answers
         }),
       });
 
@@ -209,7 +236,6 @@ const StarterQuizPage = () => {
       setQuizCompleted(true);
       
       setTimeout(() => {
-        // Redirect to where they originally wanted to go, or default to dashboard
         const redirectUrl = returnTo || '/dashboard/student';
         window.location.href = redirectUrl; 
       }, 3000);
@@ -473,9 +499,119 @@ const StarterQuizPage = () => {
           </div>
         </motion.section>
 
-        <div className="relative z-10">
-          <PHQ9Quiz onComplete={handleQuizComplete} />
-        </div>
+        {/* Quiz Selection Screen */}
+        {showQuizSelection && (
+          <motion.div 
+            className="max-w-6xl mx-auto relative z-10"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="text-center mb-12">
+              <motion.h2 
+                className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Choose Your Assessment Type
+              </motion.h2>
+              <motion.p 
+                className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                Select the assessment that best fits your time and needs. Both provide valuable insights into your mental wellness.
+              </motion.p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {Object.values(QUIZ_TYPES).map((quizType, index) => (
+                <motion.div
+                  key={quizType.id}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-gray-200/50 dark:border-gray-600/50 cursor-pointer group hover:shadow-3xl transition-all duration-300"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 + (index * 0.2) }}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                  onClick={() => {
+                    setSelectedQuizType(quizType);
+                    setShowQuizSelection(false);
+                  }}
+                >
+                  <div className="text-center">
+                    <motion.div 
+                      className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
+                        quizType.id === 'QUICK' 
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
+                          : 'bg-gradient-to-r from-purple-500 to-indigo-500'
+                      }`}
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      {quizType.id === 'QUICK' ? (
+                        <Zap className="w-10 h-10 text-white" />
+                      ) : (
+                        <Activity className="w-10 h-10 text-white" />
+                      )}
+                    </motion.div>
+                    
+                    <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-3">
+                      {quizType.name}
+                    </h3>
+                    
+                    <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+                      {quizType.description}
+                    </p>
+                    
+                    <div className="space-y-4 mb-8">
+                      <div className="flex items-center justify-center gap-2">
+                        <Clock className="w-5 h-5 text-sky-500" />
+                        <span className="text-gray-700 dark:text-gray-200 font-medium">
+                          {quizType.duration}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-center gap-2">
+                        <Brain className="w-5 h-5 text-pink-500" />
+                        <span className="text-gray-700 dark:text-gray-200 font-medium">
+                          {quizType.totalQuestions} questions
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-center gap-2">
+                        <Heart className="w-5 h-5 text-purple-500" />
+                        <span className="text-gray-700 dark:text-gray-200 font-medium">
+                          {quizType.questionnaires.length} assessment{quizType.questionnaires.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <motion.button 
+                      className={`w-full py-4 px-6 rounded-2xl font-semibold text-white text-lg transition-all duration-300 ${
+                        quizType.id === 'QUICK'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                          : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600'
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Start {quizType.name}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Quiz Component */}
+        {!showQuizSelection && selectedQuizType && (
+          <div className="relative z-10">
+            <ComprehensiveQuiz quizType={selectedQuizType} onComplete={handleQuizComplete} />
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );

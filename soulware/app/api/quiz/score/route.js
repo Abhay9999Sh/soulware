@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import dbConnect from '@/lib/mongoose';
 import { User, QuizResult } from '@/lib/models';
+import { interpretWellnessScore } from '@/lib/questionnaires';
 
 export async function GET() {
   try {
@@ -23,25 +24,61 @@ export async function GET() {
 
     console.log('✅ Found user:', user._id);
 
-    // Fetch user's quiz score from PHQ-9 quiz (which is the starter quiz)
+    // Fetch user's most recent quiz result (any type)
     const quizResult = await QuizResult.findOne({ 
-      userId: user._id,
-      quizType: 'PHQ-9' // The starter quiz uses PHQ-9 type
+      userId: user._id
     }).sort({ createdAt: -1 }); // Get the most recent one
 
     console.log('📊 Quiz result found:', quizResult);
 
     if (quizResult) {
-      // Reverse PHQ-9 score: Higher depression = Lower wellness
-      // PHQ-9: 0 (no depression) = 100% wellness, 27 (severe depression) = 0% wellness
-      const wellnessScore = Math.round(((27 - quizResult.score) / 27) * 100);
+      let wellnessScore;
+      let domainScores = {};
+      let flags = [];
+      let interpretation = null;
+      
+      // Check if it's a comprehensive result with wellness score
+      if (quizResult.wellnessScore !== undefined && quizResult.wellnessScore !== null) {
+        wellnessScore = quizResult.wellnessScore;
+        
+        // Extract domain scores
+        if (quizResult.domainResults && quizResult.domainResults.length > 0) {
+          quizResult.domainResults.forEach(domain => {
+            domainScores[domain.domain] = {
+              score: domain.normalizedScore || 0,
+              rawScore: domain.rawScore,
+              severity: domain.severity,
+              description: domain.description
+            };
+          });
+        }
+        
+        flags = quizResult.flags || [];
+        interpretation = interpretWellnessScore(wellnessScore);
+      } else {
+        // Legacy PHQ-9 only result - calculate wellness score
+        wellnessScore = Math.round(((27 - (quizResult.score || 0)) / 27) * 100);
+        interpretation = interpretWellnessScore(wellnessScore);
+        
+        // Create domain score for depression only
+        domainScores.depression = {
+          score: wellnessScore,
+          rawScore: quizResult.score,
+          severity: quizResult.severity,
+          description: `PHQ-9 Depression Assessment: ${quizResult.severity}`
+        };
+      }
       
       return NextResponse.json({ 
         score: wellnessScore,
-        rawScore: quizResult.score,
-        severity: quizResult.severity,
+        domainScores,
+        flags,
+        interpretation,
         completedAt: quizResult.createdAt,
-        quizType: quizResult.quizType
+        quizType: quizResult.quizType,
+        // Legacy fields
+        rawScore: quizResult.score,
+        severity: quizResult.severity
       });
     }
 
@@ -55,6 +92,7 @@ export async function GET() {
   }
 }
 
+// Legacy POST endpoint for backward compatibility
 export async function POST(request) {
   try {
     await dbConnect();
@@ -64,11 +102,15 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { score, answers, quizType = 'PHQ-9', severity } = await request.json();
-
-    if (score === undefined || score < 0 || score > 27) {
-      return NextResponse.json({ error: 'Invalid quiz score (must be 0-27 for PHQ-9)' }, { status: 400 });
-    }
+    const { 
+      score, 
+      answers, 
+      quizType = 'PHQ-9', 
+      severity,
+      wellnessScore,
+      domainResults,
+      flags
+    } = await request.json();
 
     // Find the user in the database by their Clerk ID
     const user = await User.findOne({ clerkId });
@@ -76,27 +118,37 @@ export async function POST(request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create new quiz result using Mongoose model
+    // Create new quiz result with comprehensive data
     const quizResult = new QuizResult({
       userId: user._id,
-      score: score,
-      severity: severity || 'Unknown',
+      quizType,
+      wellnessScore,
+      domainResults: domainResults || [],
+      flags: flags || [],
       answers: answers || [],
-      quizType: quizType
+      // Legacy fields for backward compatibility
+      score: score || 0,
+      severity: severity || 'Unknown'
     });
 
     await quizResult.save();
 
-    // Convert to wellness percentage (reversed scoring)
-    const wellnessScore = Math.round(((27 - score) / 27) * 100);
+    // Calculate wellness score if not provided (legacy support)
+    const finalWellnessScore = wellnessScore !== undefined 
+      ? wellnessScore 
+      : Math.round(((27 - (score || 0)) / 27) * 100);
 
     return NextResponse.json({ 
       success: true, 
-      score: wellnessScore,
-      rawScore: score,
-      severity: severity,
+      score: finalWellnessScore,
+      wellnessScore: finalWellnessScore,
+      domainResults: domainResults || [],
+      flags: flags || [],
       id: quizResult._id,
-      completedAt: quizResult.createdAt
+      completedAt: quizResult.createdAt,
+      // Legacy fields
+      rawScore: score,
+      severity: severity
     });
 
   } catch (error) {

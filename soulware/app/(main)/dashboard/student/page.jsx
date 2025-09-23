@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import StudentQuizCheck from "@/components/StudentQuizCheck";
+import WellnessDashboard from "@/components/WellnessDashboard";
 // NEW: Import the chatbot component
 // import FloatingChatbot from "@/components/FloatingChatbot"; 
 import { 
   Calendar, Clock, MessageCircle, BookOpen, Sparkles, User as UserIcon, Quote,
-  MapPin, CheckCircle, Star, Heart, Zap, Shield, TrendingUp, TrendingDown, Award
+  MapPin, CheckCircle, Star, Heart, Zap, Shield, TrendingUp, TrendingDown, Award,
+  BarChart3
 } from "lucide-react";
 
 // Comprehensive wellness quotes based on mood + wellness score combination
@@ -144,11 +146,15 @@ const moodOptions = [
 export default function StudentDashboard() {
   const { user } = useUser();
   const router = useRouter();
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [quote, setQuote] = useState({ text: '', author: '' });
-  const [selectedMood, setSelectedMood] = useState(null);
   const [wellnessScore, setWellnessScore] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [mood, setMood] = useState('happy');
+  const [currentQuote, setCurrentQuote] = useState(null);
+  const [showDetailedDashboard, setShowDetailedDashboard] = useState(false);
+  const [hasComprehensiveData, setHasComprehensiveData] = useState(false);
+  const [selectedMood, setSelectedMood] = useState(null);
+  const [quote, setQuote] = useState({ text: '', author: '' });
+  const [loading, setLoading] = useState(true);
   // State to control the chatbot is kept here
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
@@ -228,8 +234,22 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchBookings();
-      fetchWellnessScore();
+      const loadData = async () => {
+        setLoading(true);
+        try {
+          await Promise.all([
+            fetchBookings(),
+            fetchWellnessScore()
+          ]);
+        } catch (error) {
+          console.error('Error loading dashboard data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadData();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
@@ -257,7 +277,7 @@ export default function StudentDashboard() {
 
   const fetchWellnessScore = async () => {
     try {
-      // Fetch quiz score from database - PHQ-9 starter quiz
+      // Fetch quiz score from database - includes comprehensive data
       const response = await fetch('/api/quiz/score', {
         method: 'GET',
         headers: {
@@ -272,10 +292,20 @@ export default function StudentDashboard() {
         if (data.score !== undefined && data.score !== null) {
           console.log('✅ Wellness score updated:', data.score + '%');
           setWellnessScore(data.score);
+          
+          // Check if we have comprehensive assessment data
+          if (data.domainScores && Object.keys(data.domainScores).length > 1) {
+            console.log('📊 Comprehensive assessment data available');
+            setHasComprehensiveData(true);
+          } else {
+            console.log('📋 Basic assessment data only');
+            setHasComprehensiveData(false);
+          }
           return;
         } else {
           console.log('ℹ️ No quiz taken yet');
-          setWellnessScore(null); // null indicates no quiz taken
+          setWellnessScore(null);
+          setHasComprehensiveData(false);
           return;
         }
       } else {
@@ -285,16 +315,19 @@ export default function StudentDashboard() {
         if (response.status === 401) {
           console.log('🔐 User not authenticated');
           setWellnessScore(null);
+          setHasComprehensiveData(false);
           return;
         }
       }
 
       // Default to null if API call fails
       setWellnessScore(null);
+      setHasComprehensiveData(false);
 
     } catch (error) {
       console.error("💥 Error fetching quiz score:", error);
       setWellnessScore(null);
+      setHasComprehensiveData(false);
     }
   };
 
@@ -355,8 +388,6 @@ export default function StudentDashboard() {
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -592,6 +623,19 @@ export default function StudentDashboard() {
                 >
                   {wellnessScore === null ? '--' : `${wellnessScore}%`}
                 </motion.span>
+                {hasComprehensiveData && (
+                  <div className="mt-3">
+                    <motion.button
+                      onClick={() => setShowDetailedDashboard(true)}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm font-medium px-4 py-2 rounded-full flex items-center gap-2 mx-auto transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      View Details
+                    </motion.button>
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -802,6 +846,44 @@ export default function StudentDashboard() {
       {/* The chatbot component is now rendered here from its own file
       <FloatingChatbot isOpen={isChatbotOpen} setIsOpen={setIsChatbotOpen} /> */}
       </div>
+      
+      {/* Comprehensive Wellness Dashboard Modal */}
+      <AnimatePresence>
+        {showDetailedDashboard && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDetailedDashboard(false)}
+          >
+            <motion.div
+              className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                  Comprehensive Wellness Dashboard
+                </h2>
+                <button
+                  onClick={() => setShowDetailedDashboard(false)}
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+                <WellnessDashboard />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </StudentQuizCheck>
   );
 }

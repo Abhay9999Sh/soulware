@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import StudentQuizCheck from "@/components/StudentQuizCheck";
 import {
   MessageCircle,
   Send,
@@ -208,7 +207,6 @@ const AnonymousChat = () => {
   const getCategoryColor = category => categories.find(c => c.id === category)?.color || "text-gray-600";
 
   return (
-    <StudentQuizCheck>
       <ProtectedRoute>
       <div className="min-h-screen gradient-hero dark:gradient-hero-dark transition-all duration-500">
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -355,7 +353,6 @@ const AnonymousChat = () => {
         </AnimatePresence>
       </div>
       </ProtectedRoute>
-    </StudentQuizCheck>
   );
 };
 

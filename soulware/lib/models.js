@@ -105,15 +105,46 @@ export const LibraryArticle = mongoose.models.LibraryArticle || mongoose.model("
 // --- Quiz Result ---
 const quizResultSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  quizType: { type: String, required: true, default: 'PHQ-9' },
-  score: { type: Number, required: true },
-  severity: { type: String, required: true },
+  quizType: { type: String, required: true, enum: ['QUICK', 'FULL', 'PHQ-9'], default: 'PHQ-9' },
+  
+  // Overall wellness metrics
+  wellnessScore: { type: Number, min: 0, max: 100 },
+  
+  // Domain-specific results
+  domainResults: [{
+    questionnaire: { type: String, required: true },
+    domain: { type: String, required: true },
+    rawScore: { type: Number, required: true },
+    normalizedScore: { type: Number, min: 0, max: 100 },
+    severity: { type: String, required: true },
+    description: { type: String, required: true },
+    range: [{ type: Number }]
+  }],
+  
+  // High-risk flags
+  flags: [{
+    domain: { type: String, required: true },
+    issue: { type: String, required: true },
+    severity: { type: String, required: true }
+  }],
+  
+  // Detailed answers
   answers: [{
+    questionnaire: String,
     question: String,
     answer: Number
   }],
+  
+  // Legacy fields for backward compatibility
+  score: Number,
+  severity: String,
+  
   createdAt: { type: Date, default: Date.now }
 });
+// Index for efficient queries
+quizResultSchema.index({ userId: 1, createdAt: -1 });
+quizResultSchema.index({ userId: 1, quizType: 1 });
+
 export const QuizResult = mongoose.models.QuizResult || mongoose.model("QuizResult", quizResultSchema);
 
 // --- 8. Peer Support Forum ---
