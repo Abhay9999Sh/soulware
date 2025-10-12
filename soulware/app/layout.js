@@ -12,8 +12,13 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Digital Mental Health and Psychological Support Platform",
-  description: "",
+  title: "Soulware",
+  description: "Digital Mental Health and Psychological Support Platform",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {
