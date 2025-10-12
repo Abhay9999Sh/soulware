@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs"; 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,7 +24,7 @@ const colors = {
   accent: '#E6B38F',
 };
 
-export default function Onboarding() {
+function OnboardingComponent() {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -337,5 +337,24 @@ export default function Onboarding() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense fallback
+const OnboardingLoading = () => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-600 dark:text-gray-400">Loading onboarding...</p>
+    </div>
+  </div>
+);
+
+// Wrapper component with Suspense boundary
+export default function Onboarding() {
+  return (
+    <Suspense fallback={<OnboardingLoading />}>
+      <OnboardingComponent />
+    </Suspense>
   );
 }

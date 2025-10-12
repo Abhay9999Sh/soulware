@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { Brain, Target, Sparkles, Check, Clock, Zap, Activity, Heart } from "lucide-react";
@@ -617,5 +617,24 @@ const StarterQuizPage = () => {
   );
 };
 
-export default StarterQuizPage;
+// Loading component for Suspense fallback
+const QuizLoading = () => (
+  <div className="min-h-screen bg-gradient-to-br from-sky-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-sky-200 border-t-sky-600 rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-gray-600 dark:text-gray-400">Loading quiz...</p>
+    </div>
+  </div>
+);
+
+// Wrapper component with Suspense boundary
+const StarterQuizPageWrapper = () => {
+  return (
+    <Suspense fallback={<QuizLoading />}>
+      <StarterQuizPage />
+    </Suspense>
+  );
+};
+
+export default StarterQuizPageWrapper;
 
