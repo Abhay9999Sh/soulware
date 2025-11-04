@@ -413,13 +413,21 @@ export default function StudentDashboard() {
         );
         setCompletedSessions(completedBookings);
         
+        // Get dismissed feedback IDs from localStorage
+        const dismissedFeedbacks = JSON.parse(localStorage.getItem('dismissedFeedbacks') || '[]');
+        
         // Check if there's a recently completed session that needs feedback
         const recentlyCompleted = completedBookings.find(b => {
+          // Skip if already has rating or was dismissed
+          if (b.hasRating || dismissedFeedbacks.includes(b._id)) {
+            return false;
+          }
+          
           const completedTime = new Date(b.updatedAt || b.createdAt);
           const now = new Date();
           const timeDiff = now - completedTime;
-          // Show feedback modal for sessions completed in the last 5 minutes
-          return timeDiff < 5 * 60 * 1000 && !b.hasRating;
+          // Show feedback modal for sessions completed in the last 24 hours
+          return timeDiff < 24 * 60 * 60 * 1000;
         });
         
         if (recentlyCompleted && !showFeedbackModal) {
@@ -447,17 +455,45 @@ export default function StudentDashboard() {
       
       if (response.ok) {
         console.log('Feedback submitted successfully');
+        
+        // Mark this appointment as having feedback in localStorage
+        const dismissedFeedbacks = JSON.parse(localStorage.getItem('dismissedFeedbacks') || '[]');
+        if (!dismissedFeedbacks.includes(feedbackData.appointmentId)) {
+          dismissedFeedbacks.push(feedbackData.appointmentId);
+          localStorage.setItem('dismissedFeedbacks', JSON.stringify(dismissedFeedbacks));
+        }
+        
         // Refresh bookings to update the hasRating flag
         await fetchBookings();
       } else {
-        const error = await response.json();
-        console.error('API Error:', error);
-        throw new Error(error.error || 'Failed to submit feedback');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        let errorMessage = 'Failed to submit feedback';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error || errorMessage;
+        } catch (e) {
+          // Response wasn't JSON
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
       throw error;
     }
+  };
+  
+  const handleFeedbackSkip = () => {
+    // Mark as dismissed in localStorage so it doesn't show again
+    if (currentSessionForFeedback) {
+      const dismissedFeedbacks = JSON.parse(localStorage.getItem('dismissedFeedbacks') || '[]');
+      if (!dismissedFeedbacks.includes(currentSessionForFeedback._id)) {
+        dismissedFeedbacks.push(currentSessionForFeedback._id);
+        localStorage.setItem('dismissedFeedbacks', JSON.stringify(dismissedFeedbacks));
+      }
+    }
+    setShowFeedbackModal(false);
+    setCurrentSessionForFeedback(null);
   };
 
   if (loading) {
@@ -964,7 +1000,7 @@ export default function StudentDashboard() {
       {/* Feedback Modal */}
       <FeedbackModal
         isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
+        onClose={handleFeedbackSkip}
         appointment={currentSessionForFeedback}
         onSubmit={handleFeedbackSubmit}
       />

@@ -67,23 +67,12 @@ const About = () => {
       image: "👨‍🔧"
     },
     {
-      name: "Manmeet",
+      name: "Piyush",
       role: "Research & Learning Systems",
       bio: "Researches and implements evidence-based approaches to mental health support and learning.",
-      image: "👩‍🔬"
+      image: "👨‍💻"
     },
-    {
-      name: "Vidhatri",
-      role: "UX Content & Presentation Lead",
-      bio: "Creates compelling content and presentations that resonate with students and build trust.",
-      image: "👩‍💼"
-    },
-    {
-      name: "Srishti",
-      role: "AI & Chatbot Development",
-      bio: "Develops intelligent AI systems that provide personalized, empathetic support 24/7.",
-      image: "👩‍💻"
-    }
+    
   ];
 
   const stats = [
@@ -347,7 +336,7 @@ const About = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
             {team.map((member, index) => (
               <motion.div
                 key={member.name}

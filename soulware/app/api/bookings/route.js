@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import dbConnect from '@/lib/mongoose';
-import { User, Appointment } from '@/lib/models';
+import { User, Appointment, Rating } from '@/lib/models';
 
 /**
  * @description POST: Create a new booking request (for students)
@@ -72,7 +72,18 @@ export async function GET(req) {
         .sort({ createdAt: -1 });
     }
 
-    return NextResponse.json(bookings);
+    // Check if each appointment has a rating
+    const bookingsWithRatings = await Promise.all(
+      bookings.map(async (booking) => {
+        const rating = await Rating.findOne({ appointmentId: booking._id });
+        return {
+          ...booking.toObject(),
+          hasRating: !!rating
+        };
+      })
+    );
+
+    return NextResponse.json(bookingsWithRatings);
   } catch (error) {
     console.error("Failed to fetch bookings:", error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
