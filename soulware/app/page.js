@@ -278,14 +278,14 @@ const Home = () => {
     {
       quote:
         "This platform truly understands what students need. It's been a lifeline during difficult times. The emotional map helped me see my progress.",
-      author: "Vidhatri",
+      author: "Abhay",
       role: "Student",
       rating: 5,
     },
     {
       quote:
         "The collective voice feature is a game-changer. We finally have a way to raise important issues on campus and see them addressed.",
-      author: "Manmeet",
+      author: "Piyush",
       role: "Student",
       rating: 5,
     },
